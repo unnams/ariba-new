@@ -4,18 +4,15 @@ API Reference: https://help.sap.com/docs/ariba-apis
 Developer Portal: https://developer.ariba.com
 """
 
-import httpx
 from fastmcp import FastMCP
 
 from ariba_mcp.client import AribaClient
 from ariba_mcp.config import get_settings
 from ariba_mcp.tools import register_all_tools
 
-# Create shared client at module level so tools are registered at import time.
-# The httpx.AsyncClient is created per-request inside AribaClient methods.
-_settings = get_settings()
-_http_client = httpx.AsyncClient()
-_ariba_client = AribaClient(_settings, _http_client)
+# Create client at module level — no event loop needed here since
+# httpx.AsyncClient is created per-request inside each method.
+_client = AribaClient(get_settings())
 
 mcp = FastMCP(
     "ariba-mcp",
@@ -28,8 +25,8 @@ mcp = FastMCP(
     ),
 )
 
-# Register all tools at import time so they show up in tools/list
-register_all_tools(mcp, _ariba_client)
+# Register all tools at import time so tools/list works immediately.
+register_all_tools(mcp, _client)
 
 if __name__ == "__main__":
     mcp.run()

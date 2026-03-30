@@ -16,9 +16,8 @@ from ariba_mcp.config import AribaSettings
 class AribaAuthClient:
     """Manages OAuth token acquisition and caching for Ariba APIs."""
 
-    def __init__(self, settings: AribaSettings, http_client: httpx.AsyncClient) -> None:
+    def __init__(self, settings: AribaSettings) -> None:
         self._settings = settings
-        self._http = http_client
         self._token: str | None = None
         self._expires_at: float = 0
         self._lock = asyncio.Lock()
@@ -29,14 +28,15 @@ class AribaAuthClient:
             if self._token and time.time() < (self._expires_at - 60):
                 return self._token
 
-            response = await self._http.post(
-                f"{self._settings.ariba_oauth_url}/v2/oauth/token",
-                data={"grant_type": "client_credentials"},
-                auth=(self._settings.ariba_client_id, self._settings.ariba_client_secret),
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
-            )
-            response.raise_for_status()
-            data = response.json()
+            async with httpx.AsyncClient() as http:
+                response = await http.post(
+                    f"{self._settings.ariba_oauth_url}/v2/oauth/token",
+                    data={"grant_type": "client_credentials"},
+                    auth=(self._settings.ariba_client_id, self._settings.ariba_client_secret),
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+                )
+                response.raise_for_status()
+                data = response.json()
 
             self._token = data["access_token"]
             self._expires_at = time.time() + data.get("expires_in", 1440)
