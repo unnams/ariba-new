@@ -21,8 +21,8 @@ This enables Claude (or any MCP-compatible AI) to interact with SAP Ariba procur
 │  ariba-mcp Server (this project)                 │
 │                                                  │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
-│  │ 8 Domain │  │ Auth     │  │ Client   │       │
-│  │ Modules  │──│ OAuth2.0 │──│ httpx    │       │
+│  │ 6 Domain │  │ Auth     │  │ Client   │       │
+│  │ Folders  │──│ OAuth2.0 │──│ httpx    │       │
 │  │ 48 APIs  │  │ cached   │  │ async    │       │
 │  └──────────┘  └──────────┘  └────┬─────┘       │
 └────────────────────────────────────┼─────────────┘
@@ -36,30 +36,71 @@ This enables Claude (or any MCP-compatible AI) to interact with SAP Ariba procur
 
 ---
 
-## All 48 APIs — Domain Modules & Owners
+## All 48 APIs — 6 Domain Folders
 
-### 1. Supplier Management — [supplier_management.py](src/ariba_mcp/tools/supplier_management.py)
+### 1. Business Network — [tools/business_network/](src/ariba_mcp/tools/business_network/)
 
 | API | Owner |
 |-----|-------|
-| Supplier Data API with Pagination | Nitish SM |
-| Supplier Data API | Nitish SM |
-| Supplier Data Extraction API | Nitish SM |
-| Ariba Network Supplier Profile API | Nitish SM |
-| Supplier Invite API | Nitish SM |
+| Ariba Network Purchase Orders API | Anil |
+| Purchase Orders Supplier API | Nitish SM |
+| Order Change Requests API for Buyers | Anim |
+| Order Change Requests API for Suppliers | Shabreen |
+| Ariba Network Invoice Header Data Extraction API | Ayub |
+| Ship Notice API for Buyers | Ayub |
+| Ship Notice API for Suppliers | Shabreen |
+| Planning Collaboration Buyer API | Anim |
+| Planning Collaboration Supplier API | Shabreen |
+| Trading Partner Profile Certification API | Ayub |
 | Supplier Information API | Shabreen |
-| Supplier Risk Engagements API | Nitish SM |
-| Risk Exposure API | Anim |
-| Risk Category Information API | Shabreen |
+| Proof of Service API for Buyers | (unassigned) |
+| Data Replication Status for Multi-ERP | Ayub |
+| Transaction Monitoring API | Anim |
 
-### 2. Procurement Reporting — [procurement_reporting.py](src/ariba_mcp/tools/procurement_reporting.py)
+### 2. Catalog — [tools/catalog/](src/ariba_mcp/tools/catalog/)
+
+| API | Owner |
+|-----|-------|
+| Internal Catalogs Shop API | Anil |
+| Public Catalogs Shop API | Anil |
+| Network Catalog Management API | Anil |
+| SAP Ariba Catalog Content API | Ayub |
+| Catalog Connectivity Service API | Ayub |
+| Content Lookup API | Anil |
+| Materials and BOM Tag Management API | Anil |
+
+### 3. General — [tools/general/](src/ariba_mcp/tools/general/)
+
+| API | Owner |
+|-----|-------|
+| Document Approval API | Anim |
+| Audit Search API | Vanshika |
+| Integration Monitoring API for Procurement | Vanshika |
+| Integration Monitoring API for Strategic Sourcing | Pranathi |
+| Master Data Integration Job Status API | Anim |
+| Configuration Parameter Review API | Vanshika |
+| SAP Ariba Custom Forms API | Vanshika |
+| Asset Management API | Rohit Naik |
+| Master Data Retrieval API for Procurement | Rohit Naik |
+| Guided Buying Functional Documents API | Anim |
+| Create Procurement Workspace API | Vanshika |
+| User Qualification API | Anil |
+| Public Procurement Notices Export API | Rohit Naik |
+| NDA Data Export API | Rohit Naik |
+
+### 4. Procurement — [tools/procurement/](src/ariba_mcp/tools/procurement/)
 
 | API | Owner |
 |-----|-------|
 | Operational Reporting API for Procurement | Vanshika |
-| Analytical Reporting API (Strategic & Operational Procurement) | Anim |
+| Analytical Reporting API (Strategic & Operational) | Anim |
+| Contract Compliance API | Vanshika |
+| Contract Workspace Retrieval API | Anim |
+| Contract Workspace Management APIs | Rohit Naik |
+| Contract Terms Management API | Shabreen |
+| Cost Breakdown Data Extraction API | Vanshika |
 
-### 3. Sourcing — [sourcing.py](src/ariba_mcp/tools/sourcing.py)
+### 5. Strategic Sourcing — [tools/strategic_sourcing/](src/ariba_mcp/tools/strategic_sourcing/)
 
 | API | Owner |
 |-----|-------|
@@ -73,69 +114,18 @@ This enables Claude (or any MCP-compatible AI) to interact with SAP Ariba procur
 | Product Hierarchy Management API | Shabreen |
 | Bill of Materials Import API | Anim |
 
-### 4. Contracts — [contracts.py](src/ariba_mcp/tools/contracts.py)
+### 6. Supplier Management — [tools/supplier_management/](src/ariba_mcp/tools/supplier_management/)
 
 | API | Owner |
 |-----|-------|
-| Contract Compliance API | Vanshika |
-| Contract Workspace Retrieval API | Anim |
-| Contract Workspace Management APIs | Rohit Naik |
-| Contract Terms Management API | Shabreen |
-| NDA Data Export API | Rohit Naik |
-| Cost Breakdown Data Extraction API | Vanshika |
-
-### 5. Purchase Orders — [purchase_orders.py](src/ariba_mcp/tools/purchase_orders.py)
-
-| API | Owner |
-|-----|-------|
-| Purchase Orders Supplier API | Nitish SM |
-| Ariba Network Purchase Orders API | Anil |
-| Order Change Requests API for Buyers | Anim |
-| Order Change Requests API for Suppliers | Shabreen |
-
-### 6. Catalogs — [catalogs.py](src/ariba_mcp/tools/catalogs.py)
-
-| API | Owner |
-|-----|-------|
-| Internal Catalogs Shop API | Anil |
-| Public Catalogs Shop API | Anil |
-| Network Catalog Management API | Anil |
-| SAP Ariba Catalog Content API | Ayub |
-| Catalog Connectivity Service API | Ayub |
-| Content Lookup API | Anil |
-| Materials and BOM Tag Management API | Anil |
-
-### 7. Supply Chain & Network — [supply_chain.py](src/ariba_mcp/tools/supply_chain.py)
-
-| API | Owner |
-|-----|-------|
-| Ship Notice API for Buyers | Ayub |
-| Ship Notice API for Suppliers | Shabreen |
-| Planning Collaboration Buyer API | Anim |
-| Planning Collaboration Supplier API | Shabreen |
-| Proof of Service API for Buyers | (unassigned) |
-| Ariba Network Invoice Header Data Extraction API | Ayub |
-| Trading Partner Profile Certification API | Ayub |
-| Data Replication Status for Multi-ERP | Ayub |
-
-### 8. Administration & Monitoring — [administration.py](src/ariba_mcp/tools/administration.py)
-
-| API | Owner |
-|-----|-------|
-| Document Approval API | Anim |
-| Audit Search API | Vanshika |
-| Integration Monitoring API for Procurement | Vanshika |
-| Integration Monitoring API for Strategic Sourcing | Pranathi |
-| Transaction Monitoring API | Anim |
-| Master Data Integration Job Status API | Anim |
-| Configuration Parameter Review API | Vanshika |
-| SAP Ariba Custom Forms API | Vanshika |
-| Asset Management API | Rohit Naik |
-| Master Data Retrieval API for Procurement | Rohit Naik |
-| Guided Buying Functional Documents API | Anim |
-| Create Procurement Workspace API | Vanshika |
-| User Qualification API | Anil |
-| Public Procurement Notices Export API | Rohit Naik |
+| Supplier Data API with Pagination | Nitish SM |
+| Supplier Data API | Nitish SM |
+| Supplier Data Extraction API | Nitish SM |
+| Ariba Network Supplier Profile API | Nitish SM |
+| Supplier Invite API | Nitish SM |
+| Supplier Risk Engagements API | Nitish SM |
+| Risk Exposure API | Anim |
+| Risk Category Information API | Shabreen |
 
 ---
 
@@ -207,24 +197,40 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ```
 ariba-mcp/
 ├── src/ariba_mcp/
-│   ├── server.py                   # FastMCP entrypoint
-│   ├── config.py                   # Settings (reads .env)
-│   ├── auth.py                     # OAuth 2.0 client credentials
-│   ├── client.py                   # Async HTTP client (views, jobs, resources)
-│   ├── errors.py                   # Error handling
-│   ├── models/common.py           # Shared Pydantic models
+│   ├── server.py                       # FastMCP entrypoint
+│   ├── config.py                       # Settings (reads .env)
+│   ├── auth.py                         # OAuth 2.0 client credentials
+│   ├── client.py                       # Async HTTP client (views, jobs, resources)
+│   ├── errors.py                       # Error handling
+│   ├── models/common.py               # Shared Pydantic models
 │   └── tools/
-│       ├── __init__.py             # Registers all 8 domains
-│       ├── supplier_management.py  # 9 APIs — Supplier data, risk, profiles
-│       ├── procurement_reporting.py # 2 APIs — Operational + Analytical reporting
-│       ├── sourcing.py             # 9 APIs — Sourcing projects, events, approvals
-│       ├── contracts.py            # 6 APIs — Compliance, workspaces, terms, NDA
-│       ├── purchase_orders.py      # 4 APIs — PO buyer/supplier, order changes
-│       ├── catalogs.py             # 7 APIs — Internal/public/network catalogs
-│       ├── supply_chain.py         # 8 APIs — Ship notice, planning, invoices
-│       └── administration.py       # 14 APIs — Approvals, audit, monitoring, config
+│       ├── __init__.py                 # Registers all 6 domain folders
+│       ├── business_network/           # 14 APIs — POs, invoices, ship notices, planning
+│       │   ├── __init__.py
+│       │   ├── _example.py
+│       │   └── <your_api>.py           # ← team members add files here
+│       ├── catalog/                    # 7 APIs — catalogs, content, connectivity
+│       │   ├── __init__.py
+│       │   ├── _example.py
+│       │   └── <your_api>.py
+│       ├── general/                    # 14 APIs — approvals, audit, monitoring, config
+│       │   ├── __init__.py
+│       │   ├── _example.py
+│       │   └── <your_api>.py
+│       ├── procurement/                # 7 APIs — reporting, contracts, compliance
+│       │   ├── __init__.py
+│       │   ├── _example.py
+│       │   └── <your_api>.py
+│       ├── strategic_sourcing/         # 9 APIs — sourcing projects, events, bids
+│       │   ├── __init__.py
+│       │   ├── _example.py
+│       │   └── <your_api>.py
+│       └── supplier_management/        # 8 APIs — supplier data, risk, profiles
+│           ├── __init__.py
+│           ├── _example.py
+│           └── <your_api>.py
 ├── tests/
-├── .agents/skills/mcp-builder/    # MCP builder reference docs
+├── .agents/skills/mcp-builder/        # MCP builder reference docs
 ├── pyproject.toml
 ├── .env.example
 ├── CONTRIBUTING.md
@@ -235,15 +241,15 @@ ariba-mcp/
 
 ## How to Implement Your API
 
-Each tool file has **one working example** and **TODO comments** for the rest. To implement your API:
+Each folder has a `_example.py` with a working tool to copy from. To add your API:
 
-1. Open your domain file in `src/ariba_mcp/tools/`
-2. Find your API in the TODO list
-3. Check the API docs link in the file header
-4. Look up the exact endpoint path on the [Developer Portal](https://developer.ariba.com)
-5. Add the API path constant at the top of the file
-6. Copy the example tool pattern and implement your tool
-7. Test with MCP Inspector
+1. Find the right folder in `src/ariba_mcp/tools/` (see table above)
+2. Look at `_example.py` in that folder for the pattern
+3. Create a **new .py file** named after your API (e.g. `supplier_data_extraction.py`)
+4. Define a `register(mcp, client)` function with your `@mcp.tool` inside it
+5. Open the folder's `__init__.py` and add your import + `register()` call
+6. Look up the exact endpoint path on the [Developer Portal](https://developer.ariba.com)
+7. Test with MCP Inspector: `npx @modelcontextprotocol/inspector python -m ariba_mcp.server`
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed coding patterns.
 

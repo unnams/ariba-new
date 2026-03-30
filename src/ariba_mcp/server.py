@@ -1,20 +1,8 @@
 """SAP Ariba MCP Server — entrypoint.
 
-Exposes 35+ tools across 8 SAP Ariba API domains:
-- Operational Reporting for Procurement
-- Operational Reporting for Strategic Sourcing
-- Analytical Reporting
-- Supplier Data & Profiles
-- Contract Compliance & Workspaces
-- Sourcing Project Management
-- Document Approval & Audit
-- Supplier Risk
-
 API Reference: https://help.sap.com/docs/ariba-apis
 Developer Portal: https://developer.ariba.com
 """
-
-from contextlib import asynccontextmanager
 
 import httpx
 from fastmcp import FastMCP
@@ -23,16 +11,11 @@ from ariba_mcp.client import AribaClient
 from ariba_mcp.config import get_settings
 from ariba_mcp.tools import register_all_tools
 
-
-@asynccontextmanager
-async def lifespan(server: FastMCP):
-    """Manage the shared AribaClient lifecycle."""
-    settings = get_settings()
-    async with httpx.AsyncClient() as http_client:
-        client = AribaClient(settings, http_client)
-        register_all_tools(server, client)
-        yield {"client": client}
-
+# Create shared client at module level so tools are registered at import time.
+# The httpx.AsyncClient is created per-request inside AribaClient methods.
+_settings = get_settings()
+_http_client = httpx.AsyncClient()
+_ariba_client = AribaClient(_settings, _http_client)
 
 mcp = FastMCP(
     "ariba-mcp",
@@ -43,9 +26,10 @@ mcp = FastMCP(
         "document approvals, audit logs, and supplier risk from your SAP Ariba realm. "
         "API docs: https://help.sap.com/docs/ariba-apis"
     ),
-    json_response=True,
-    lifespan=lifespan,
 )
+
+# Register all tools at import time so they show up in tools/list
+register_all_tools(mcp, _ariba_client)
 
 if __name__ == "__main__":
     mcp.run()

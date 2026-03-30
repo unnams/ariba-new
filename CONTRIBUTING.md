@@ -23,65 +23,74 @@ Get the `.env` file from the credentials owner and place it in the project root.
 ## How It Works
 
 - **Shared infrastructure is done** — `config.py`, `auth.py`, `client.py`, `errors.py`, `server.py` are complete
-- **Each tool file has one working example** and **TODO comments** for remaining APIs
-- **You only edit your tool file** — find your API in the TODO list, implement it
-- Each file is in `src/ariba_mcp/tools/` and grouped by domain
+- **6 domain folders** under `tools/` — each has an `_example.py` to copy from
+- **You create a new .py file** in the right folder for your API
+- **Register it** by adding an import in the folder's `__init__.py`
 
 ---
 
 ## Step-by-Step: Implement Your API
 
-### 1. Find your file
+### 1. Find your folder
 
-| Domain File | APIs |
-|------------|------|
-| `tools/supplier_management.py` | Supplier Data, Profiles, Risk, Invite |
-| `tools/procurement_reporting.py` | Operational & Analytical Reporting |
-| `tools/sourcing.py` | Sourcing projects, events, approvals, master data |
-| `tools/contracts.py` | Compliance, workspaces, terms, NDA, cost breakdown |
-| `tools/purchase_orders.py` | PO buyer/supplier, order change requests |
-| `tools/catalogs.py` | Internal/public/network catalogs, content |
-| `tools/supply_chain.py` | Ship notice, planning, invoices, certifications |
-| `tools/administration.py` | Approvals, audit, monitoring, config, forms |
+| Folder | APIs |
+|--------|------|
+| `tools/business_network/` | POs, invoices, ship notices, planning, certifications |
+| `tools/catalog/` | Internal/public/network catalogs, content, connectivity |
+| `tools/general/` | Approvals, audit, monitoring, config, forms, assets |
+| `tools/procurement/` | Operational + analytical reporting, contracts |
+| `tools/strategic_sourcing/` | Sourcing projects, events, approvals, master data |
+| `tools/supplier_management/` | Supplier data, profiles, risk, invite |
 
-### 2. Look up your API docs
+### 2. Look at the `_example.py` in your folder
 
-Each file header lists the doc links. Also check:
-- https://developer.ariba.com → log in → find your API → Swagger spec
-- The Swagger spec gives you the **exact endpoint path** and **parameters**
+Each folder has a working example tool. Read it to understand the pattern.
 
-### 3. Add your API path constant
+### 3. Create your file
+
+Create a new `.py` file named after your API:
+```
+tools/supplier_management/supplier_data_extraction.py
+```
+
+### 4. Write your register function
 
 ```python
-# At the top of the file, uncomment and fill in:
+import json
+from fastmcp import FastMCP
+from ariba_mcp.client import AribaClient
+from ariba_mcp.errors import handle_ariba_error
+
+# Get this from the Developer Portal Swagger spec
 MY_API_PATH = "my-api/v1/prod"
+
+def register(mcp: FastMCP, client: AribaClient) -> None:
+
+    @mcp.tool(
+        name="ariba_<meaningful_name>",
+        description="Clear description of what this does.",
+        annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    )
+    async def my_tool(param: str, page_token: str | None = None) -> str:
+        try:
+            result = await client.fetch_resource(MY_API_PATH, f"resource/{param}")
+            return json.dumps(result, default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
 ```
 
-### 4. Implement your tool
+### 5. Register in `__init__.py`
 
-Copy the example tool in the file and modify:
-
+Open your folder's `__init__.py` and add:
 ```python
-@mcp.tool(
-    name="ariba_<meaningful_name>",
-    description="Clear description of what this does.",
-    annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
-)
-async def my_tool(param: str, page_token: str | None = None) -> str:
-    try:
-        result = await client.fetch_resource(MY_API_PATH, f"resource/{param}")
-        return json.dumps(result, default=str)
-    except Exception as e:
-        return handle_ariba_error(e)
+from ariba_mcp.tools.supplier_management import supplier_data_extraction
+supplier_data_extraction.register(mcp, client)
 ```
 
-### 5. Test
+### 6. Test
 
 ```bash
-# Start server
 python -m ariba_mcp.server
-
-# Test with MCP Inspector
 npx @modelcontextprotocol/inspector python -m ariba_mcp.server
 ```
 
@@ -135,6 +144,8 @@ chore/<desc>               # e.g. chore/update-deps
 
 ## Rules
 
+- **One file per API** — each person creates their own `.py` file in the right folder
+- **Always register** — add import + `.register()` call in the folder's `__init__.py`
 - **Async everywhere** — all tool functions are `async`
 - **Always catch exceptions** — use `handle_ariba_error(e)`
 - **Return JSON strings** — `json.dumps(result, default=str)`
