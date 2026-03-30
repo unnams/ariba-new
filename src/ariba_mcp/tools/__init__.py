@@ -1,6 +1,6 @@
 """Tool registration for all SAP Ariba API domains.
 
-Domains map to the real SAP Ariba Developer Portal API categories:
+8 domain modules covering 48 SAP Ariba APIs:
 https://help.sap.com/docs/ariba-apis
 """
 
@@ -8,25 +8,25 @@ from fastmcp import FastMCP
 
 from ariba_mcp.client import AribaClient
 from ariba_mcp.tools import (
-    analytical_reporting,
-    contract_compliance,
-    document_approval,
-    operational_procurement,
-    operational_sourcing,
-    sourcing_project,
-    supplier_data,
-    supplier_risk,
+    administration,
+    catalogs,
+    contracts,
+    procurement_reporting,
+    purchase_orders,
+    sourcing,
+    supplier_management,
+    supply_chain,
 )
 
 _DOMAINS = [
-    operational_procurement,
-    operational_sourcing,
-    analytical_reporting,
-    supplier_data,
-    contract_compliance,
-    sourcing_project,
-    document_approval,
-    supplier_risk,
+    supplier_management,
+    procurement_reporting,
+    sourcing,
+    contracts,
+    purchase_orders,
+    catalogs,
+    supply_chain,
+    administration,
 ]
 
 
