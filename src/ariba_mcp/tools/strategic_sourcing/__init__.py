@@ -23,9 +23,11 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     """Register all Strategic Sourcing tools from submodules."""
     from ariba_mcp.tools.strategic_sourcing import _example
     from ariba_mcp.tools.strategic_sourcing import master_data  
+    from ariba_mcp.tools.strategic_sourcing import product_sourcing
 
     _example.register(mcp, client)
     master_data.register(mcp, client)
+    product_sourcing.register(mcp, client)
 
       
 
