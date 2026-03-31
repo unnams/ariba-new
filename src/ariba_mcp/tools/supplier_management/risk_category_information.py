@@ -25,7 +25,7 @@ from ariba_mcp.client import AribaClient
 from ariba_mcp.errors import handle_ariba_error
 
 # TODO: Confirm exact API path slug from the Developer Portal
-RISK_CATEGORY_API = "https://openapi.ariba.com/api/risk-category-information/v1/prod"
+RISK_CATEGORY_API = "risk-category-information/v1/prod"
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
