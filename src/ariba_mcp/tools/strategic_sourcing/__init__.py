@@ -25,11 +25,13 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     from ariba_mcp.tools.strategic_sourcing import master_data  
     from ariba_mcp.tools.strategic_sourcing import product_sourcing
     from ariba_mcp.tools.strategic_sourcing import external_approval_API
+    from ariba_mcp.tools.strategic_sourcing import sourcing_project_mangement
 
     _example.register(mcp, client)
     master_data.register(mcp, client)
     product_sourcing.register(mcp, client)
     external_approval_API.register(mcp, client)
+    sourcing_project_mangement.register(mcp, client)  
 
        
 
