@@ -22,9 +22,14 @@ from ariba_mcp.client import AribaClient
 def register(mcp: FastMCP, client: AribaClient) -> None:
     """Register all Strategic Sourcing tools from submodules."""
     from ariba_mcp.tools.strategic_sourcing import _example
+    from ariba_mcp.tools.strategic_sourcing import master_data  
 
     _example.register(mcp, client)
+    master_data.register(mcp, client)
+
+      
 
     # As team members add files, import and register them here:
     # from ariba_mcp.tools.strategic_sourcing import sourcing_project_management
     # sourcing_project_management.register(mcp, client)
+ 
