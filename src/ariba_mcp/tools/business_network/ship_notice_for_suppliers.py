@@ -8,8 +8,8 @@ Supply Chain enablement who want to retrieve detailed ship-notice information
 directly from SAP Business Network.
 
 Endpoints implemented:
-  GET /shipNotices  – retrieve ship notice headers for the supplier
-  GET /items        – retrieve line items for a specific ship notice
+  GET /shipNotices  - retrieve ship notice headers for the supplier
+  GET /items        - retrieve line items for a specific ship notice
 
 Prerequisites:
   - SAP Ariba Developer Portal access

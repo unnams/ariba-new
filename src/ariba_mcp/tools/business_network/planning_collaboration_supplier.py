@@ -8,9 +8,9 @@ Supply Chain enablement who want to retrieve planning information directly
 from SAP Business Network.
 
 Endpoints implemented:
-  GET /forecast                – retrieve forecast records from buyers
-  GET /supplierInventory       – retrieve supplier inventory records
-  GET /supplierManagedInventory – retrieve supplier-managed inventory (SMI) records
+  GET /forecast                - retrieve forecast records from buyers
+  GET /supplierInventory       - retrieve supplier inventory records
+  GET /supplierManagedInventory-retrieve supplier-managed inventory (SMI) records
 
 Prerequisites:
   - SAP Ariba Developer Portal access (Enterprise accounts only)
