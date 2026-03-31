@@ -28,3 +28,5 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     # As team members add files, import and register them here:
     # from ariba_mcp.tools.supplier_management import supplier_data_extraction
     # supplier_data_extraction.register(mcp, client)
+    from ariba_mcp.tools.business_network import risk_category_information
+    risk_category_information.register(mcp, client)

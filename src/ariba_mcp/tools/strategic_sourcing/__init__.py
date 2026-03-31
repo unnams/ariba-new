@@ -28,3 +28,5 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     # As team members add files, import and register them here:
     # from ariba_mcp.tools.strategic_sourcing import sourcing_project_management
     # sourcing_project_management.register(mcp, client)
+    from ariba_mcp.tools.business_network import product_hierarchy_management
+    product_hierarchy_management.register(mcp, client)
