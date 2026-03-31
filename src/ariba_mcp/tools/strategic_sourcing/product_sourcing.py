@@ -34,7 +34,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             # json.dumps(filter_dict)             # re-serialize to string
 
             # Generic fetch call (since no fetch_view here)
-            result = await client.fetch(
+            result = await client.fetch(  
                 PRICING_API,
                 params={
                     "filters": json.dumps(filter_dict) if filter_dict else None,
