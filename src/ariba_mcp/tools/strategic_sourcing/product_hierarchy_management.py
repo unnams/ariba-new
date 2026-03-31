@@ -25,7 +25,7 @@ from ariba_mcp.client import AribaClient
 from ariba_mcp.errors import handle_ariba_error
 
 # Note the v2 version in the path — confirmed from API docs
-PRODUCT_HIERARCHY_API = "https://openapi.ariba.com/api/product-hierarchy/v2/prod"
+PRODUCT_HIERARCHY_API = "product-hierarchy/v2/prod"
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
