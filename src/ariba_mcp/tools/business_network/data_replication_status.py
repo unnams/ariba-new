@@ -39,7 +39,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     async def list_all_replication_records(realm: str) -> str:
         try:
             url = f"{client.base_url}/{API_PATH}/statuses"
-            headers = await client.auth.get_headers()
+            headers = await client.auth.get_headers()    
 
             async with httpx.AsyncClient() as http:
                 resp = await http.get(

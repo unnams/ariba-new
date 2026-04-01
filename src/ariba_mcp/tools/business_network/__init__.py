@@ -36,7 +36,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     data_replication_status.register(mcp, client)
     trading_partner_profile_certification.register(mcp, client)
     _example.register(mcp, client)
-    ship_notice_for_buyers.register(mcp, client)   
+    ship_notice_for_buyers.register(mcp, client)     
 
     # As team members add files, import and register them here:
     # from ariba_mcp.tools.business_network import purchase_orders_supplier
