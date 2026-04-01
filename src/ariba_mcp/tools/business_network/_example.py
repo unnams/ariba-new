@@ -11,6 +11,7 @@ Steps to add your own API:
   2. Define a register(mcp, client) function
   3. Add your @mcp.tool functions inside it
   4. Import and call register() in __init__.py
+  Order Change Requests API for Suppliers
 """
 
 import json
