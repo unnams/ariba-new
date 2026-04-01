@@ -2,6 +2,7 @@ import json
 
 from fastmcp import FastMCP
 from ariba_mcp.client import AribaClient
+from ariba_mcp.config import get_profile_settings
 from ariba_mcp.errors import handle_ariba_error
 
 SOURCING_PROJECT_API = "https://openapi.ariba.com/api/sourcing-project-management/v2/prod"
@@ -23,14 +24,47 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         },
     )
     async def list_sourcing_projects(
+        user: str | None = None,
+        password_adapter: str | None = None,
+        filter_expr: str | None = None,
         page_token: str | None = None,
     ) -> str:
         try:
-            result = await client.fetch(
+            active_client = AribaClient(get_profile_settings("SAPI"))
+            effective_user = user or active_client._settings.ariba_user
+            effective_adapter = password_adapter or active_client._settings.ariba_password_adapter
+            if not effective_user or not effective_adapter:
+                return json.dumps(
+                    {
+                        "error": True,
+                        "message": (
+                            "Missing required query params for this API. "
+                            "Provide `user` and `password_adapter`, or set "
+                            "ARIBA_SAPI_USER and ARIBA_SAPI_PASSWORD_ADAPTER in .env."
+                        ),
+                    }
+                )
+
+            if not filter_expr:
+                return json.dumps(
+                    {
+                        "error": True,
+                        "message": (
+                            "This API requires a valid `$filter` expression. "
+                            "Pass `filter_expr` exactly as defined in your Ariba "
+                            "Sourcing Project Management API docs for your tenant."
+                        ),
+                    }
+                )
+
+            result = await active_client.fetch(
                 f"{SOURCING_PROJECT_API}/projects",
                 params={
-                    "pageToken": page_token
-                }
+                    "user": effective_user,
+                    "passwordAdapter": effective_adapter,
+                    "$filter": filter_expr,
+                    "pageToken": page_token,
+                },
             )
 
             return json.dumps(result, default=str)
@@ -53,10 +87,30 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     )
     async def get_sourcing_project(
         project_id: str,
+        user: str | None = None,
+        password_adapter: str | None = None,
     ) -> str:
         try:
-            result = await client.fetch(
-                f"{SOURCING_PROJECT_API}/projects/{project_id}"
+            active_client = AribaClient(get_profile_settings("SAPI"))
+            effective_user = user or active_client._settings.ariba_user
+            effective_adapter = password_adapter or active_client._settings.ariba_password_adapter
+            if not effective_user or not effective_adapter:
+                return json.dumps(
+                    {
+                        "error": True,
+                        "message": (
+                            "Missing required query params for this API. "
+                            "Provide `user` and `password_adapter`, or set "
+                            "ARIBA_SAPI_USER and ARIBA_SAPI_PASSWORD_ADAPTER in .env."
+                        ),
+                    }
+                )
+            result = await active_client.fetch(
+                f"{SOURCING_PROJECT_API}/projects/{project_id}",
+                params={
+                    "user": effective_user,
+                    "passwordAdapter": effective_adapter,
+                },
             )
 
             return json.dumps(result, default=str)
@@ -80,13 +134,33 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     )
     async def create_sourcing_project(
         project_data: str,
+        user: str | None = None,
+        password_adapter: str | None = None,
     ) -> str:
         try:
+            active_client = AribaClient(get_profile_settings("SAPI"))
             payload = json.loads(project_data)
+            effective_user = user or active_client._settings.ariba_user
+            effective_adapter = password_adapter or active_client._settings.ariba_password_adapter
+            if not effective_user or not effective_adapter:
+                return json.dumps(
+                    {
+                        "error": True,
+                        "message": (
+                            "Missing required query params for this API. "
+                            "Provide `user` and `password_adapter`, or set "
+                            "ARIBA_SAPI_USER and ARIBA_SAPI_PASSWORD_ADAPTER in .env."
+                        ),
+                    }
+                )
 
-            result = await client.post(
+            result = await active_client.post(
                 f"{SOURCING_PROJECT_API}/projects",
-                json=payload
+                json=payload,
+                params={
+                    "user": effective_user,
+                    "passwordAdapter": effective_adapter,
+                },
             )
 
             return json.dumps(result, default=str)

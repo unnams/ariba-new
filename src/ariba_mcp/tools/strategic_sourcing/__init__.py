@@ -31,7 +31,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     master_data.register(mcp, client)
     product_sourcing.register(mcp, client)
     external_approval_API.register(mcp, client)
-    sourcing_project_mangement.register(mcp, client)  
+    sourcing_project_mangement.register(mcp, client)
 
        
 
