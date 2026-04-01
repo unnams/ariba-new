@@ -46,14 +46,12 @@ def _make_auth() -> DirectAuthClient:
 
 
 def _build_filter(updated_since: str | None, updated_until: str | None) -> str:
-    """Build $filter string. updatedDateTo is always required by the API."""
+    """Build $filter string. Both dates are required by the API."""
+    if not updated_since:
+        updated_since = "2020-01-01T00:00:00Z"
     if not updated_until:
         updated_until = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    parts = []
-    if updated_since:
-        parts.append(f"updatedDateFrom ge {updated_since}")
-    parts.append(f"updatedDateTo le {updated_until}")
-    return " and ".join(parts)
+    return f"updatedDateFrom ge {updated_since} and updatedDateTo le {updated_until}"
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
