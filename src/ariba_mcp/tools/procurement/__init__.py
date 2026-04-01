@@ -37,3 +37,5 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     # As team members add files, import and register them here:
     # from ariba_mcp.tools.procurement import analytical_reporting
     # analytical_reporting.register(mcp, client)
+
+

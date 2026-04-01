@@ -140,8 +140,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             "  - \"effectiveDate ge '2024-01-01T00:00:00Z'\"\n"
             "  - \"expirationDate lt '2025-12-31T00:00:00Z'\"\n"
             "Use top and skip for pagination. "
-            "Returns header-level fields including contractRequestId."
-        ),
+            "Returns header-level fields including contractRequestId."       
+        ),    
         annotations={
             "readOnlyHint": True,
             "destructiveHint": False,
@@ -149,6 +149,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             "openWorldHint": True,
         },
     )
+    
     async def list_contract_requests(
         filter: str | None = None,
         top: int = 20,

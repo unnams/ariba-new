@@ -72,6 +72,7 @@ Cost group document statuses:
 """
 
 import json
+from datetime import datetime
 
 import httpx
 from fastmcp import FastMCP
@@ -84,6 +85,102 @@ from ariba_mcp.errors import handle_ariba_error
 # ---------------------------------------------------------------------------
 
 API_PATH = "cost-breakdown/v1/prod"
+LIST_RESOURCE = "rfxCostgroups"
+DOCUMENT_RESOURCE = "costgroupDocuments"
+
+
+def _format_date_filter(date_value: str) -> str:
+    """Convert ISO-like input into the compact format expected by Ariba."""
+    try:
+        normalized = date_value.replace("Z", "+00:00")
+        parsed = datetime.fromisoformat(normalized)
+        return parsed.strftime("%Y%m%dT%H%M%S")
+    except ValueError:
+        compact = date_value.replace("-", "").replace(":", "")
+        if len(compact) == 15 and "T" in compact:
+            return compact
+        raise ValueError(
+            "Cost Breakdown date filters must be ISO-8601 or YYYYMMDDThhmmss."
+        )
+
+
+def _find_first_list(payload: dict | list, *candidate_keys: str) -> list:
+    """Return the first matching list found in a nested payload."""
+    if isinstance(payload, dict):
+        for key in candidate_keys:
+            value = payload.get(key)
+            if isinstance(value, list):
+                return value
+        for value in payload.values():
+            result = _find_first_list(value, *candidate_keys)
+            if result:
+                return result
+    elif isinstance(payload, list):
+        for item in payload:
+            result = _find_first_list(item, *candidate_keys)
+            if result:
+                return result
+    return []
+
+
+def _extract_cost_components(document_payload: dict) -> list[dict]:
+    """Extract cost components from the document payload."""
+    return _find_first_list(
+        document_payload,
+        "costComponents",
+        "costcomponents",
+        "CostComponents",
+    )
+
+
+def _extract_cost_group_terms(document_payload: dict) -> list[dict]:
+    """Extract cost group terms from the document payload."""
+    direct_terms = _find_first_list(
+        document_payload,
+        "costGroupTerms",
+        "costgroupTerms",
+        "CostGroupTerms",
+    )
+    if direct_terms:
+        return direct_terms
+
+    collected_terms: list[dict] = []
+    for component in _extract_cost_components(document_payload):
+        component_terms = _find_first_list(
+            component,
+            "costGroupTerms",
+            "costgroupTerms",
+            "CostGroupTerms",
+        )
+        component_id = component.get("id") or component.get("costComponentId")
+        for term in component_terms:
+            if isinstance(term, dict) and component_id and "costComponentId" not in term:
+                collected_terms.append({"costComponentId": component_id, **term})
+            else:
+                collected_terms.append(term)
+    return collected_terms
+
+
+async def _fetch_cost_group_document_payload(
+    client: AribaClient, cost_group_document_id: str
+) -> dict:
+    """Fetch a cost group document using the documented GET endpoint."""
+    url = (
+        f"{client.api_base_url(API_PATH)}/"
+        f"{DOCUMENT_RESOURCE}/{cost_group_document_id}"
+    )
+    headers = await client.get_headers_for_api(API_PATH)
+
+    async with httpx.AsyncClient() as http:
+        resp = await http.get(
+            url,
+            params={"realm": client.realm},
+            headers=headers,
+            timeout=60,
+        )
+        resp.raise_for_status()
+
+    return resp.json()
 
 
 # ---------------------------------------------------------------------------
@@ -136,31 +233,17 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns cost group documents matching the given filters.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/costGroupDocuments"
-            headers = await client.auth.get_headers()
-
-            # Build OData $filter parts
-            filter_parts: list[str] = []
-            if project_id:
-                filter_parts.append(f"projectId eq '{project_id}'")
-            if event_id:
-                filter_parts.append(f"eventId eq '{event_id}'")
-            if supplier_id:
-                filter_parts.append(f"supplierId eq '{supplier_id}'")
-            if status:
-                filter_parts.append(f"status eq '{status}'")
-            if updated_from:
-                filter_parts.append(f"updatedDate ge '{updated_from}'")
-            if updated_to:
-                filter_parts.append(f"updatedDate le '{updated_to}'")
+            url = f"{client.api_base_url(API_PATH)}/{LIST_RESOURCE}"
+            headers = await client.get_headers_for_api(API_PATH)
 
             params: dict = {
                 "realm": client.realm,
                 "$top": min(top, 100),
                 "$skip": skip,
+                "$count": "true",
             }
-            if filter_parts:
-                params["$filter"] = " and ".join(filter_parts)
+            if updated_from:
+                params["$filter"] = _format_date_filter(updated_from)
 
             async with httpx.AsyncClient() as http:
                 resp = await http.get(url, params=params, headers=headers, timeout=60)
@@ -174,6 +257,13 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     "supplierId": supplier_id,
                     "status": status,
                     "updatedFrom": updated_from,
+                    "updatedTo": updated_to,
+                },
+                "unsupported_filters_ignored": {
+                    "projectId": project_id,
+                    "eventId": event_id,
+                    "supplierId": supplier_id,
+                    "status": status,
                     "updatedTo": updated_to,
                 },
                 "response": data,
@@ -208,19 +298,10 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns header-level details for one cost group document.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/costGroupDocuments/{cost_group_document_id}"
-            headers = await client.auth.get_headers()
-
-            async with httpx.AsyncClient() as http:
-                resp = await http.get(
-                    url,
-                    params={"realm": client.realm},
-                    headers=headers,
-                    timeout=60,
-                )
-                resp.raise_for_status()
-
-            return json.dumps(resp.json(), default=str)
+            payload = await _fetch_cost_group_document_payload(
+                client, cost_group_document_id
+            )
+            return json.dumps(payload, default=str)
 
         except Exception as e:
             return handle_ariba_error(e)
@@ -257,23 +338,11 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns all cost components for the specified cost group document.
         """
         try:
-            url = (
-                f"{client.base_url}/{API_PATH}"
-                f"/costGroupDocuments/{cost_group_document_id}/costComponents"
+            document_payload = await _fetch_cost_group_document_payload(
+                client, cost_group_document_id
             )
-            headers = await client.auth.get_headers()
-
-            params: dict = {
-                "realm": client.realm,
-                "$top": min(top, 200),
-                "$skip": skip,
-            }
-
-            async with httpx.AsyncClient() as http:
-                resp = await http.get(url, params=params, headers=headers, timeout=60)
-                resp.raise_for_status()
-
-            data = resp.json()
+            components = _extract_cost_components(document_payload)
+            data = components[skip : skip + min(top, 200)]
             result = {
                 "costGroupDocumentId": cost_group_document_id,
                 "response": data,
@@ -313,23 +382,17 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns details for a single cost component.
         """
         try:
-            url = (
-                f"{client.base_url}/{API_PATH}"
-                f"/costGroupDocuments/{cost_group_document_id}"
-                f"/costComponents/{cost_component_id}"
+            document_payload = await _fetch_cost_group_document_payload(
+                client, cost_group_document_id
             )
-            headers = await client.auth.get_headers()
-
-            async with httpx.AsyncClient() as http:
-                resp = await http.get(
-                    url,
-                    params={"realm": client.realm},
-                    headers=headers,
-                    timeout=60,
-                )
-                resp.raise_for_status()
-
-            return json.dumps(resp.json(), default=str)
+            for component in _extract_cost_components(document_payload):
+                component_id = component.get("id") or component.get("costComponentId")
+                if component_id == cost_component_id:
+                    return json.dumps(component, default=str)
+            raise ValueError(
+                f"Cost component '{cost_component_id}' was not found in "
+                f"cost group document '{cost_group_document_id}'."
+            )
 
         except Exception as e:
             return handle_ariba_error(e)
@@ -370,25 +433,18 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Optionally filtered by supplierId.
         """
         try:
-            url = (
-                f"{client.base_url}/{API_PATH}"
-                f"/costGroupDocuments/{cost_group_document_id}/costGroupTerms"
+            document_payload = await _fetch_cost_group_document_payload(
+                client, cost_group_document_id
             )
-            headers = await client.auth.get_headers()
-
-            params: dict = {
-                "realm": client.realm,
-                "$top": min(top, 500),
-                "$skip": skip,
-            }
+            all_terms = _extract_cost_group_terms(document_payload)
             if supplier_id:
-                params["$filter"] = f"supplierId eq '{supplier_id}'"
-
-            async with httpx.AsyncClient() as http:
-                resp = await http.get(url, params=params, headers=headers, timeout=60)
-                resp.raise_for_status()
-
-            data = resp.json()
+                all_terms = [
+                    term
+                    for term in all_terms
+                    if term.get("supplierId") == supplier_id
+                    or term.get("supplierID") == supplier_id
+                ]
+            data = all_terms[skip : skip + min(top, 500)]
             result = {
                 "costGroupDocumentId": cost_group_document_id,
                 "supplierFilter": supplier_id,
@@ -433,26 +489,24 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns cost group terms for a single cost component.
         """
         try:
-            url = (
-                f"{client.base_url}/{API_PATH}"
-                f"/costGroupDocuments/{cost_group_document_id}"
-                f"/costComponents/{cost_component_id}/costGroupTerms"
+            document_payload = await _fetch_cost_group_document_payload(
+                client, cost_group_document_id
             )
-            headers = await client.auth.get_headers()
-
-            params: dict = {
-                "realm": client.realm,
-                "$top": min(top, 200),
-                "$skip": skip,
-            }
+            all_terms = _extract_cost_group_terms(document_payload)
+            component_terms = [
+                term
+                for term in all_terms
+                if term.get("costComponentId") == cost_component_id
+                or term.get("costcomponentid") == cost_component_id
+            ]
             if supplier_id:
-                params["$filter"] = f"supplierId eq '{supplier_id}'"
-
-            async with httpx.AsyncClient() as http:
-                resp = await http.get(url, params=params, headers=headers, timeout=60)
-                resp.raise_for_status()
-
-            data = resp.json()
+                component_terms = [
+                    term
+                    for term in component_terms
+                    if term.get("supplierId") == supplier_id
+                    or term.get("supplierID") == supplier_id
+                ]
+            data = component_terms[skip : skip + min(top, 200)]
             result = {
                 "costGroupDocumentId": cost_group_document_id,
                 "costComponentId": cost_component_id,
@@ -496,35 +550,11 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Assembles into one unified dict for easy consumption.
         """
         try:
-            base_doc_url = f"{client.base_url}/{API_PATH}/costGroupDocuments/{cost_group_document_id}"
-            headers = await client.auth.get_headers()
-            realm_params = {"realm": client.realm}
-
-            async with httpx.AsyncClient() as http:
-                # 1. Header
-                r1 = await http.get(base_doc_url, params=realm_params, headers=headers, timeout=60)
-                r1.raise_for_status()
-                doc_header = r1.json()
-
-                # 2. Cost Components
-                r2 = await http.get(
-                    f"{base_doc_url}/costComponents",
-                    params={**realm_params, "$top": 500},
-                    headers=headers,
-                    timeout=60,
-                )
-                r2.raise_for_status()
-                components = r2.json()
-
-                # 3. All Cost Group Terms
-                r3 = await http.get(
-                    f"{base_doc_url}/costGroupTerms",
-                    params={**realm_params, "$top": 500},
-                    headers=headers,
-                    timeout=60,
-                )
-                r3.raise_for_status()
-                terms = r3.json()
+            doc_header = await _fetch_cost_group_document_payload(
+                client, cost_group_document_id
+            )
+            components = _extract_cost_components(doc_header)
+            terms = _extract_cost_group_terms(doc_header)
 
             # Build a unified nested structure:
             # costGroupDocument
@@ -536,7 +566,9 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                 comp_id = term.get("costComponentId", "__unassigned__")
                 terms_by_component.setdefault(comp_id, []).append(term)
 
-            components_list = components if isinstance(components, list) else components.get("value", [])
+            components_list = (
+                components if isinstance(components, list) else components.get("value", [])
+            )
             enriched_components = []
             for comp in components_list:
                 comp_id = comp.get("id") or comp.get("costComponentId", "")
@@ -590,32 +622,18 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns all cost group documents for the given sourcing project.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/costGroupDocuments"
-            headers = await client.auth.get_headers()
-
-            filter_parts = [f"projectId eq '{project_id}'"]
-            if event_id:
-                filter_parts.append(f"eventId eq '{event_id}'")
-            if status:
-                filter_parts.append(f"status eq '{status}'")
-
-            params: dict = {
-                "realm": client.realm,
-                "$filter": " and ".join(filter_parts),
-                "$top": min(top, 100),
-                "$skip": 0,
-            }
-
-            async with httpx.AsyncClient() as http:
-                resp = await http.get(url, params=params, headers=headers, timeout=60)
-                resp.raise_for_status()
-
-            data = resp.json()
+            message = (
+                "The Cost Breakdown Data Extraction API does not support projectId, "
+                "eventId, or status query parameters on its documented GET search "
+                "endpoint. Use ariba_cost_breakdown_list_documents with updated_from "
+                "to retrieve rfxCostgroups, then fetch individual documents by ID."
+            )
             result = {
                 "projectId": project_id,
                 "eventId": event_id,
                 "statusFilter": status,
-                "response": data,
+                "response": [],
+                "message": message,
             }
             return json.dumps(result, default=str)
 
