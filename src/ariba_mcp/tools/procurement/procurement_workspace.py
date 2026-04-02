@@ -55,10 +55,12 @@ passed via the API. Passing unknown custom fields returns HTTP 400.
 """
 
 import json
+import os
 
 import httpx
 from fastmcp import FastMCP
 
+from ariba_mcp.auth import DirectAuthClient
 from ariba_mcp.client import AribaClient
 from ariba_mcp.errors import handle_ariba_error
 
@@ -66,7 +68,15 @@ from ariba_mcp.errors import handle_ariba_error
 # Constants
 # ---------------------------------------------------------------------------
 
-API_PATH = "procurement-workspace/v1/prod"
+BASE_URL = "https://openapi.ariba.com/api/procurement-workspace/v1/prod"
+
+
+def _make_auth() -> DirectAuthClient:
+    return DirectAuthClient(
+        client_id=os.getenv("PROCUREMENT_WORKSPACE_CLIENT_ID", ""),
+        client_secret=os.getenv("PROCUREMENT_WORKSPACE_CLIENT_SECRET", ""),
+        api_key=os.getenv("PROCUREMENT_WORKSPACE_API_KEY", ""),
+    )
 
 # Valid workspace states for the state-change endpoint
 WORKSPACE_STATES = [
@@ -87,6 +97,8 @@ WORKSPACE_STATES = [
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
     """Register all Create Procurement Workspace API tools with the MCP server."""
+
+    _auth = _make_auth()
 
     # ======================================================================
     # 1. List Available Templates
@@ -114,8 +126,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns all workspace templates available for the calling user's realm.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/templates"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/templates"
+            headers = await _auth.get_headers()
 
             async with httpx.AsyncClient() as http:
                 resp = await http.get(
@@ -180,8 +192,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns workspaceId on success.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/workspaces"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/workspaces"
+            headers = await _auth.get_headers()
             headers["Content-Type"] = "application/json"
 
             # Build request body — only include fields that were provided
@@ -272,8 +284,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns all procurement workspaces matching filter criteria.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/workspaces"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/workspaces"
+            headers = await _auth.get_headers()
 
             params: dict = {
                 "realm": client.realm,
@@ -319,8 +331,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns full header details for a single procurement workspace.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/workspaces/{workspace_id}"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/workspaces/{workspace_id}"
+            headers = await _auth.get_headers()
 
             async with httpx.AsyncClient() as http:
                 resp = await http.get(
@@ -374,8 +386,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Partial update — only supplied fields are changed.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/workspaces/{workspace_id}"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/workspaces/{workspace_id}"
+            headers = await _auth.get_headers()
             headers["Content-Type"] = "application/json"
 
             body: dict = {}
@@ -454,8 +466,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Transitions the workspace to the specified state.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/workspaces/{workspace_id}/state"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/workspaces/{workspace_id}/state"
+            headers = await _auth.get_headers()
             headers["Content-Type"] = "application/json"
 
             body: dict = {"state": new_state}
@@ -513,8 +525,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns all documents associated with the workspace.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/workspaces/{workspace_id}/documents"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/workspaces/{workspace_id}/documents"
+            headers = await _auth.get_headers()
 
             params: dict = {
                 "realm": client.realm,
@@ -563,8 +575,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Links an existing document to the workspace.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/workspaces/{workspace_id}/documents"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/workspaces/{workspace_id}/documents"
+            headers = await _auth.get_headers()
             headers["Content-Type"] = "application/json"
 
             body: dict = {

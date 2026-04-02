@@ -29,11 +29,13 @@ All new audit data flows through this API. Legacy audit log exports are deprecat
 """
 
 import json
+import os
 from datetime import datetime, timezone
 
 import httpx
 from fastmcp import FastMCP
 
+from ariba_mcp.auth import DirectAuthClient
 from ariba_mcp.client import AribaClient
 from ariba_mcp.errors import handle_ariba_error
 
@@ -41,7 +43,15 @@ from ariba_mcp.errors import handle_ariba_error
 # Constants
 # ---------------------------------------------------------------------------
 
-API_PATH = "audit-search/v2/prod"
+BASE_URL = "https://openapi.ariba.com/api/audit-search/v2/prod"
+
+
+def _make_auth() -> DirectAuthClient:
+    return DirectAuthClient(
+        client_id=os.getenv("AUDIT_SEARCH_CLIENT_ID", ""),
+        client_secret=os.getenv("AUDIT_SEARCH_CLIENT_SECRET", ""),
+        api_key=os.getenv("AUDIT_SEARCH_API_KEY", ""),
+    )
 
 # Common auditable object types (non-exhaustive — use ariba_audit_list_object_types for full list)
 COMMON_OBJECT_TYPES = [
@@ -80,6 +90,8 @@ COMMON_EVENT_TYPES = [
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
     """Register all Audit Search API tools with the MCP server."""
+
+    _auth = _make_auth()
 
     # ------------------------------------------------------------------
     # 1. Search Audit Records (core search endpoint)
@@ -123,8 +135,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         All filter fields are optional but at least one is recommended.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/auditRecords/search"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/auditRecords/search"
+            headers = await _auth.get_headers()
             headers["Content-Type"] = "application/json"
 
             # Build filter body — only include fields that were provided
@@ -201,8 +213,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns full details for a single audit record.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/auditRecords/{record_id}"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/auditRecords/{record_id}"
+            headers = await _auth.get_headers()
 
             async with httpx.AsyncClient() as http:
                 resp = await http.get(
@@ -242,8 +254,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns all auditable object types for the realm.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/objectTypes"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/objectTypes"
+            headers = await _auth.get_headers()
 
             async with httpx.AsyncClient() as http:
                 resp = await http.get(
@@ -283,8 +295,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns all audit event types the realm supports.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/eventTypes"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/eventTypes"
+            headers = await _auth.get_headers()
 
             async with httpx.AsyncClient() as http:
                 resp = await http.get(
@@ -329,8 +341,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns aggregated counts of audit events, grouped by objectType and eventType.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/auditRecords/summary"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/auditRecords/summary"
+            headers = await _auth.get_headers()
 
             params: dict = {"realm": client.realm}
             if from_date:
@@ -388,8 +400,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Convenience wrapper — actor_id is mandatory here.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/auditRecords/search"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/auditRecords/search"
+            headers = await _auth.get_headers()
             headers["Content-Type"] = "application/json"
 
             filters: dict = {"actorId": actor_id}
@@ -461,8 +473,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns the complete change history for one specific document.
         """
         try:
-            url = f"{client.base_url}/{API_PATH}/auditRecords/search"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/auditRecords/search"
+            headers = await _auth.get_headers()
             headers["Content-Type"] = "application/json"
 
             filters: dict = {
@@ -540,8 +552,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             from_date_str = from_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
             to_date_str = now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-            url = f"{client.base_url}/{API_PATH}/auditRecords/search"
-            headers = await client.auth.get_headers()
+            url = f"{BASE_URL}/auditRecords/search"
+            headers = await _auth.get_headers()
             headers["Content-Type"] = "application/json"
 
             filters: dict = {
