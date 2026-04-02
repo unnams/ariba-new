@@ -29,6 +29,21 @@ class AribaSettings(BaseSettings):
     ariba_client_secret: str
     ariba_api_key: str
 
+    # Supplier Risk Engagements API credentials
+    ariba_risk_client_id: str = ""
+    ariba_risk_client_secret: str = ""
+    ariba_risk_api_key: str = ""
+
+    # Supplier Data API (supplierdataaccess/v1) credentials
+    ariba_sda_client_id: str = ""
+    ariba_sda_client_secret: str = ""
+    ariba_sda_api_key: str = ""
+
+    # Supplier Invite API credentials
+    ariba_invite_client_id: str = ""
+    ariba_invite_client_secret: str = ""
+    ariba_invite_api_key: str = ""
+
     # Base URLs (SAP Ariba standard endpoints)
     ariba_oauth_url: str = "https://api.ariba.com"
     ariba_api_url: str = "https://openapi.ariba.com/api"
