@@ -27,12 +27,10 @@ from ariba_mcp.client import AribaClient
 def register(mcp: FastMCP, client: AribaClient) -> None:
     """Register all General/Admin tools from submodules."""
     from ariba_mcp.tools.general import _example
-    from ariba_mcp.tools.general import Integration_monitoring_API
-    
 
     _example.register(mcp, client)
-    Integration_monitoring_API.register(mcp, client)
 
-    # As team members add files, import and register them here:
-    # from ariba_mcp.tools.general import audit_search
-    # audit_search.register(mcp, client)
+    # BROKEN — Integration_monitoring_API.py uses get_general_settings() which doesn't exist
+    # and has a syntax error on line 17. Pranathi needs to fix this file.
+    # from ariba_mcp.tools.general import Integration_monitoring_API
+    # Integration_monitoring_API.register(mcp, client)
