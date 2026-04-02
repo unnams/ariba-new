@@ -1,101 +1,86 @@
-import json
-import httpx
+"""Integration Monitoring API for Strategic Sourcing.
 
+Owner: Pranathi
+Prod URL: https://openapi.ariba.com/api/strategicsourcing-eventstatus/v2/prod
+
+Retrieves event status for strategic sourcing integration events.
+
+Authentication: OAuth 2.0 Bearer token + apiKey header (Pranathi credentials)
+"""
+
+import json
+import os
+
+import httpx
 from fastmcp import FastMCP
+
+from ariba_mcp.auth import DirectAuthClient
 from ariba_mcp.client import AribaClient
-from ariba_mcp.config import get_general_settings
 from ariba_mcp.errors import handle_ariba_error
 
-EVENT_STATUS_API_CANDIDATES = [
+BASE_URL = os.getenv(
+    "ARIBA_EVENT_STATUS_API",
     "https://openapi.ariba.com/api/strategicsourcing-eventstatus/v2/prod",
-    "https://openapi.ariba.com/api/strategicsourcing-eventstatus/v1/prod",
-    "https://openapi.ariba.com/api/strategic-sourcing-eventstatus/v2/prod",
-]
+)
 
 
-async def _fetch_with_endpoint_fallback(active_client: AribaClient, suffix: str, params: dict | None = None) -> dict:
-    settin
-    gs = get_general_settings()
-    if settings.ariba_event_status_api:
-        candidates = [settings.ariba_event_status_api.rstrip("/")]
-    else:
-        candidates = list(EVENT_STATUS_API_CANDIDATES)
-
-    last_error: Exception | None = None
-    for base in candidates:
-        url = f"{base}{suffix}"
-        try:
-            return await active_client.fetch(url, params=params)
-        except httpx.HTTPStatusError as e:
-            last_error = e
-            text = (e.response.text or "").lower()
-            # Retry only when endpoint is clearly missing; stop on auth/permission errors.
-            if e.response.status_code == 404 and ("<html" in text or "no static resource" in text):
-                continue
-            raise
-        except Exception as e:  # pragma: no cover - network dependent
-            last_error = e
-            continue
-
-    if last_error:
-        raise last_error
-    raise RuntimeError("No event status endpoint candidates configured")
+def _make_auth() -> DirectAuthClient:
+    return DirectAuthClient(
+        client_id=os.getenv("PRANATHI_CLIENT_ID", ""),
+        client_secret=os.getenv("PRANATHI_CLIENT_SECRET", ""),
+        api_key=os.getenv("PRANATHI_API_KEY", ""),
+    )
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
 
+    _auth = _make_auth()
+
     @mcp.tool(
         name="ariba_get_event_status",
         description=(
-            "Retrieve the status of a sourcing event in Ariba. "
-            "Used to check if an event is open, closed, or awarded."
+            "Retrieve the status of a specific sourcing event by event ID. "
+            "Returns whether the event is open, closed, awarded, or in another state."
         ),
-        annotations={
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": True,
-        },
+        annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     )
-    async def get_event_status(
-        event_id: str,
-    ) -> str:
+    async def get_event_status(event_id: str) -> str:
         try:
-            active_client = AribaClient(get_general_settings())
-            result = await _fetch_with_endpoint_fallback(active_client, f"/events/{event_id}")
-
-            return json.dumps(result, default=str)
-
+            headers = await _auth.get_headers()
+            async with httpx.AsyncClient() as http:
+                resp = await http.get(
+                    f"{BASE_URL}/events/{event_id}",
+                    headers=headers,
+                    params={"realm": client.realm},
+                    timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
-
 
     @mcp.tool(
         name="ariba_list_event_status",
         description=(
-            "Retrieve list of sourcing events with their statuses."
+            "List sourcing events with their statuses. "
+            "Supports pagination via page_token (returned in previous response)."
         ),
-        annotations={
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": True,
-        },
+        annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     )
-    async def list_event_status(
-        page_token: str | None = None,
-    ) -> str:
+    async def list_event_status(page_token: str | None = None) -> str:
         try:
-            active_client = AribaClient(get_general_settings())
-            result = await _fetch_with_endpoint_fallback(
-                active_client,
-                "/events",
-                params={
-                    "pageToken": page_token
-                },
-            )
-
-            return json.dumps(result, default=str)
-
+            headers = await _auth.get_headers()
+            params: dict = {"realm": client.realm}
+            if page_token:
+                params["pageToken"] = page_token
+            async with httpx.AsyncClient() as http:
+                resp = await http.get(
+                    f"{BASE_URL}/events",
+                    headers=headers,
+                    params=params,
+                    timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)

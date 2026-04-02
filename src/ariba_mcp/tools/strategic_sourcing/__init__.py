@@ -25,9 +25,11 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         _example,
         configuration_parameter_review,
         cost_breakdown_data_extraction,
+        external_approval_API,
         master_data,
         product_hierarchy_management,
         product_sourcing,
+        sourcing_project_mangement,
         surrogate_bid,
     )
 
@@ -38,8 +40,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     product_sourcing.register(mcp, client)
     product_hierarchy_management.register(mcp, client)
     configuration_parameter_review.register(mcp, client)
-
-    # BROKEN — use get_profile_settings() which doesn't exist yet:
-    # sourcing_project_mangement.register(mcp, client)
-    # external_approval_API.register(mcp, client)
+    sourcing_project_mangement.register(mcp, client)
+    external_approval_API.register(mcp, client)
 
