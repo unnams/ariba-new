@@ -123,4 +123,4 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             result = await client.get(url, params=params, api_path=API_PATH)
             return json.dumps(result, default=str)
         except Exception as e:
-            return handle_ariba_error(e)
+            return handle_ariba_error(e)#internal

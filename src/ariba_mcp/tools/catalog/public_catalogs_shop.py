@@ -9,6 +9,7 @@ Key endpoints:
   GET /Shops({shopID})/Items        — Return all items and their details from a public catalog shop.
   GET /Shops({shopID})/AutoComplete — Typeahead search: retrieve matching search suggestions.
 
+  
 Prerequisites:
   - Access to SAP Ariba Developer Portal to create an application and request API access.
   - All queries must be authenticated using OAuth authentication.

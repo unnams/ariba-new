@@ -8,6 +8,7 @@ Key endpoints:
   POST /qualifications — Create user qualification records.
   PUT  /qualifications — Replace existing user qualification records.
 
+  
 Prerequisites:
   - User Qualification feature must be enabled for your site.
   - Import User Qualification Fields and Field Mappings must be configured by a Customer Administrator.
