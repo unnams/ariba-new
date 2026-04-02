@@ -19,7 +19,8 @@ APIs in this folder:
 Each person creates their own .py file in this folder.
 """
 
-from fastmcp import FastMCP
+from fastmcp import FastMCP, client
+import mcp
 
 from ariba_mcp.client import AribaClient
 
@@ -34,5 +35,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     Integration_monitoring_API.register(mcp, client)
 
     # As team members add files, import and register them here:
-    # from ariba_mcp.tools.general import audit_search
-    # audit_search.register(mcp, client)
+    from ariba_mcp.tools.general import asset_management
+    asset_management.register(mcp, client)
+    
+    from ariba_mcp.tools.general import public_procurement
+    public_procurement.register(mcp, client)
