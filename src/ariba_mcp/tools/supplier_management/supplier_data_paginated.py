@@ -36,13 +36,16 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     @mcp.tool(
         name="ariba_supplier_list_all",
         description=(
-            "List all suppliers/vendors from the realm. "
+            "List suppliers/vendors from the realm with optional client-side pagination. "
             "Returns supplier name, SM vendor ID, ERP vendor ID, AN ID, "
-            "registration status, qualification status, address, and more."
+            "registration status, qualification status, address, and more. "
+            "Use page and page_size to paginate through results (e.g. page=1 page_size=50 "
+            "returns rows 1-50, page=2 returns rows 51-100). "
+            "Omit page/page_size to get all records at once."
         ),
         annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     )
-    async def list_all_suppliers() -> str:
+    async def list_all_suppliers(page: int | None = None, page_size: int = 50) -> str:
         try:
             url = f"{client.base_url}/{API_PATH}/vendorDataRequests"
             headers = await client.auth.get_headers()
@@ -60,10 +63,24 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                 resp.raise_for_status()
 
             rows = _csv_to_json(resp.text)
-            result = {
-                "total_count": len(rows),
-                "suppliers": rows,
-            }
+
+            if page is not None:
+                start = (page - 1) * page_size
+                end = start + page_size
+                page_rows = rows[start:end]
+                result = {
+                    "page": page,
+                    "page_size": page_size,
+                    "total_count": len(rows),
+                    "total_pages": -(-len(rows) // page_size),  # ceiling division
+                    "returned_count": len(page_rows),
+                    "suppliers": page_rows,
+                }
+            else:
+                result = {
+                    "total_count": len(rows),
+                    "suppliers": rows,
+                }
             return json.dumps(result, default=str)
         except Exception as e:
             return handle_ariba_error(e)

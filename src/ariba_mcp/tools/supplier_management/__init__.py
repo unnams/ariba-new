@@ -20,7 +20,15 @@ from ariba_mcp.client import AribaClient
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
     """Register all Supplier Management tools from submodules."""
-    from ariba_mcp.tools.supplier_management import _example, supplier_data_paginated
+    from ariba_mcp.tools.supplier_management import (
+        _example,
+        ariba_network_supplier_profile,
+        supplier_data_api,
+        supplier_data_extraction,
+        supplier_data_paginated,
+        supplier_invite,
+        supplier_risk_engagements,
+    )
 
     _example.register(mcp, client)
     supplier_data_paginated.register(mcp, client)
@@ -28,3 +36,5 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     # As team members add files, import and register them here:
     # from ariba_mcp.tools.supplier_management import supplier_data_extraction
     # supplier_data_extraction.register(mcp, client)
+    from ariba_mcp.tools.business_network import risk_category_information
+    risk_category_information.register(mcp, client)
