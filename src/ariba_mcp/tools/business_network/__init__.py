@@ -27,18 +27,21 @@ from ariba_mcp.client import AribaClient
 def register(mcp: FastMCP, client: AribaClient) -> None:
     """Register all Business Network tools from submodules."""
     from ariba_mcp.tools.business_network import _example
+
+    from ariba_mcp.tools.business_network import data_replication_status
+   
+    from ariba_mcp.tools.business_network import invoice_header_data_extraction
+   
+
+    invoice_header_data_extraction.register(mcp, client)
+    data_replication_status.register(mcp, client)
+    
     _example.register(mcp, client)
+  
 
-    # ✅ Correctly inside register() so mcp and client are in scope
-    from ariba_mcp.tools.business_network import order_change_requests_for_suppliers
-    order_change_requests_for_suppliers.register(mcp, client)
+    # As team members add files, import and register them here:
+    # from ariba_mcp.tools.business_network import purchase_orders_supplier
+    # purchase_orders_supplier.register(mcp, client)
 
-    #connecting the tool of planning Collaboration Supplier API
-    from ariba_mcp.tools.business_network import ship_notice_for_suppliers
-    ship_notice_for_suppliers.register(mcp, client)
-    #connecting the tool of planning Collaboration Supplier API
-    from ariba_mcp.tools.business_network import planning_collaboration_supplier
-    planning_collaboration_supplier.register(mcp, client)
-    # #connecting the tool of Supplier Information API
-    from ariba_mcp.tools.business_network import supplier_information
-    supplier_information.register(mcp, client)
+
+
