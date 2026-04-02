@@ -31,3 +31,5 @@ htmlcov/
 
 # ContextKeeper local database
 .contextkeeper/history.json
+
+node_modules
