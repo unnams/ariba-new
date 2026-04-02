@@ -24,12 +24,15 @@ from ariba_mcp.config import AribaSettings
 
 
 class AribaClient:
-    """Async HTTP client for SAP Ariba REST APIs."""
+    """Async HTTP client for SAP Ariba REST APIs.
 
-    def __init__(self, settings: AribaSettings, http_client: httpx.AsyncClient) -> None:
+    Each request creates its own httpx.AsyncClient to avoid event loop issues
+    in serverless/hosted environments like Prefect Horizon.
+    """
+
+    def __init__(self, settings: AribaSettings) -> None:
         self._settings = settings
-        self._http = http_client
-        self.auth = AribaAuthClient(settings, http_client)
+        self.auth = AribaAuthClient(settings)
 
     @property
     def realm(self) -> str:
@@ -42,20 +45,22 @@ class AribaClient:
     async def get(self, url: str, params: dict[str, Any] | None = None) -> dict:
         """Send an authenticated GET to a full URL."""
         headers = await self.auth.get_headers()
-        response = await self._http.get(
-            url, headers=headers, params=params, timeout=self._settings.request_timeout
-        )
-        response.raise_for_status()
-        return response.json()
+        async with httpx.AsyncClient() as http:
+            response = await http.get(
+                url, headers=headers, params=params, timeout=self._settings.request_timeout
+            )
+            response.raise_for_status()
+            return response.json()
 
     async def post(self, url: str, json_body: dict | None = None, params: dict[str, Any] | None = None) -> dict:
         """Send an authenticated POST."""
         headers = await self.auth.get_headers()
-        response = await self._http.post(
-            url, headers=headers, json=json_body, params=params, timeout=self._settings.request_timeout
-        )
-        response.raise_for_status()
-        return response.json()
+        async with httpx.AsyncClient() as http:
+            response = await http.post(
+                url, headers=headers, json=json_body, params=params, timeout=self._settings.request_timeout
+            )
+            response.raise_for_status()
+            return response.json()
 
     # ── View-based APIs (Operational / Analytical Reporting) ──
 
@@ -66,17 +71,7 @@ class AribaClient:
         filters: dict | None = None,
         page_token: str | None = None,
     ) -> dict:
-        """Fetch a reporting view with optional filters and pagination.
-
-        Args:
-            api_path: API base path, e.g. "procurement-reporting-details/v1/prod"
-            view_name: View template name, e.g. "CostCenterProcurementSystemView"
-            filters: Optional filter dict (e.g. {"createdDateFrom": "2025-01-01"})
-            page_token: Token for next page (from previous response)
-
-        Returns:
-            Raw API response dict containing records and optional pageToken.
-        """
+        """Fetch a reporting view with optional filters and pagination."""
         import json as json_mod
 
         url = f"{self.base_url}/{api_path}/views/{view_name}"
@@ -100,13 +95,7 @@ class AribaClient:
     # ── Job-based APIs (Async Reporting) ──
 
     async def submit_job(self, api_path: str, view_name: str, filters: dict | None = None) -> dict:
-        """Submit an async reporting job.
-
-        Args:
-            api_path: e.g. "procurement-reporting-job/v2/prod"
-            view_name: View template name
-            filters: Optional filter criteria
-        """
+        """Submit an async reporting job."""
         url = f"{self.base_url}/{api_path}/jobs"
         params: dict[str, Any] = {"realm": self.realm}
         body: dict[str, Any] = {"viewTemplateName": view_name}
@@ -130,13 +119,7 @@ class AribaClient:
     # ── Resource-based APIs (Contract Compliance, Approvals, etc.) ──
 
     async def fetch_resource(self, api_path: str, resource: str, params: dict[str, Any] | None = None) -> dict:
-        """Fetch a resource endpoint.
-
-        Args:
-            api_path: e.g. "contract-compliance/v1/prod"
-            resource: e.g. "contracts/ABC123"
-            params: Additional query parameters
-        """
+        """Fetch a resource endpoint."""
         url = f"{self.base_url}/{api_path}/{resource}"
         all_params: dict[str, Any] = {"realm": self.realm}
         if params:

@@ -1,6 +1,13 @@
 """Tool registration for all SAP Ariba API domains.
 
-Domains map to the real SAP Ariba Developer Portal API categories:
+6 domain folders covering 48 SAP Ariba APIs:
+  - business_network/   — PO, invoices, ship notices, planning, certifications
+  - catalog/            — Internal/public/network catalogs, content, connectivity
+  - general/            — Approvals, audit, monitoring, config, forms, assets
+  - procurement/        — Operational + analytical reporting, contracts
+  - strategic_sourcing/ — Sourcing projects, events, approvals, master data
+  - supplier_management/ — Supplier data, profiles, risk, invite
+
 https://help.sap.com/docs/ariba-apis
 """
 
@@ -8,29 +15,25 @@ from fastmcp import FastMCP
 
 from ariba_mcp.client import AribaClient
 from ariba_mcp.tools import (
-    analytical_reporting,
-    contract_compliance,
-    document_approval,
-    operational_procurement,
-    operational_sourcing,
-    sourcing_project,
-    supplier_data,
-    supplier_risk,
+    business_network,
+    catalog,
+    general,
+    procurement,
+    strategic_sourcing,
+    supplier_management,
 )
 
 _DOMAINS = [
-    operational_procurement,
-    operational_sourcing,
-    analytical_reporting,
-    supplier_data,
-    contract_compliance,
-    sourcing_project,
-    document_approval,
-    supplier_risk,
+    business_network,
+    catalog,
+    general,
+    procurement,
+    strategic_sourcing,
+    supplier_management,
 ]
 
 
 def register_all_tools(mcp: FastMCP, client: AribaClient) -> None:
-    """Register tools from every domain module."""
+    """Register tools from every domain folder."""
     for domain in _DOMAINS:
         domain.register(mcp, client)
