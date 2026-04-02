@@ -19,10 +19,7 @@ from ariba_mcp.client import AribaClient
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
     """Register all Catalog tools from submodules."""
-    from ariba_mcp.tools.catalog import _example
+    from ariba_mcp.tools.catalog import _example, asset_management
 
     _example.register(mcp, client)
-
-    # As team members add files, import and register them here:
-    # from ariba_mcp.tools.catalog import public_catalogs_shop
-    # public_catalogs_shop.register(mcp, client)
+    asset_management.register(mcp, client)

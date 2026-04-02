@@ -33,19 +33,30 @@ Notes:
 """
  
 import json
- 
+import os
+
+import httpx
 from fastmcp import FastMCP
- 
+
+from ariba_mcp.auth import DirectAuthClient
 from ariba_mcp.client import AribaClient
 from ariba_mcp.errors import handle_ariba_error
- 
-# Production URL confirmed from API docs:
-# https://openapi.ariba.com/api/procurement-eventstatus/v2/prod
-INTEGRATION_MONITORING_API = "procurement-eventstatus/v2/prod"
+
+BASE_URL = "https://openapi.ariba.com/api/procurement-eventstatus/v2/prod"
+
+
+def _make_auth() -> DirectAuthClient:
+    return DirectAuthClient(
+        client_id=os.getenv("INTEGRATION_MONITORING_CLIENT_ID", ""),
+        client_secret=os.getenv("INTEGRATION_MONITORING_CLIENT_SECRET", ""),
+        api_key=os.getenv("INTEGRATION_MONITORING_API_KEY", ""),
+    )
  
  
 def register(mcp: FastMCP, client: AribaClient) -> None:
- 
+
+    _auth = _make_auth()
+
     @mcp.tool(
         name="ariba_procurement_integration_event_status",
         description=(
@@ -87,6 +98,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             skip:       Optional. Number of records to skip for pagination (default 0).
         """
         try:
+            headers = await _auth.get_headers()
             params: dict = {
                 "realm": realm,
                 "taskName": task_name,
@@ -97,9 +109,14 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                 params["$top"] = top
             if skip is not None:
                 params["$skip"] = skip
-            result = await client.fetch_resource(
-                INTEGRATION_MONITORING_API, "eventStatus", params
-            )
-            return json.dumps(result, default=str)
+            async with httpx.AsyncClient() as http:
+                resp = await http.get(
+                    f"{BASE_URL}/eventStatus",
+                    headers=headers,
+                    params=params,
+                    timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)

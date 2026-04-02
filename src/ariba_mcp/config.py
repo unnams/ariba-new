@@ -53,7 +53,7 @@ class AribaSettings(BaseSettings):
     default_page_size: int = 50
     max_page_size: int = 10000  # Ariba APIs support up to 10k per page for async
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
 @lru_cache

@@ -72,11 +72,13 @@ Cost group document statuses:
 """
 
 import json
+import os
 from datetime import datetime
 
 import httpx
 from fastmcp import FastMCP
 
+from ariba_mcp.auth import DirectAuthClient
 from ariba_mcp.client import AribaClient
 from ariba_mcp.errors import handle_ariba_error
 
@@ -84,9 +86,17 @@ from ariba_mcp.errors import handle_ariba_error
 # Constants
 # ---------------------------------------------------------------------------
 
-API_PATH = "cost-breakdown/v1/prod"
+BASE_URL = "https://openapi.ariba.com/api/cost-breakdown/v1/prod"
 LIST_RESOURCE = "rfxCostgroups"
 DOCUMENT_RESOURCE = "costgroupDocuments"
+
+
+def _make_auth() -> DirectAuthClient:
+    return DirectAuthClient(
+        client_id=os.getenv("COST_BREAKDOWN_CLIENT_ID", ""),
+        client_secret=os.getenv("COST_BREAKDOWN_CLIENT_SECRET", ""),
+        api_key=os.getenv("COST_BREAKDOWN_API_KEY", ""),
+    )
 
 
 def _format_date_filter(date_value: str) -> str:
@@ -162,19 +172,16 @@ def _extract_cost_group_terms(document_payload: dict) -> list[dict]:
 
 
 async def _fetch_cost_group_document_payload(
-    client: AribaClient, cost_group_document_id: str
+    auth: DirectAuthClient, realm: str, cost_group_document_id: str
 ) -> dict:
     """Fetch a cost group document using the documented GET endpoint."""
-    url = (
-        f"{client.api_base_url(API_PATH)}/"
-        f"{DOCUMENT_RESOURCE}/{cost_group_document_id}"
-    )
-    headers = await client.get_headers_for_api(API_PATH)
+    url = f"{BASE_URL}/{DOCUMENT_RESOURCE}/{cost_group_document_id}"
+    headers = await auth.get_headers()
 
     async with httpx.AsyncClient() as http:
         resp = await http.get(
             url,
-            params={"realm": client.realm},
+            params={"realm": realm},
             headers=headers,
             timeout=60,
         )
@@ -190,6 +197,8 @@ async def _fetch_cost_group_document_payload(
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
     """Register all Cost Breakdown Data Extraction API tools with the MCP server."""
+
+    _auth = _make_auth()
 
     # ======================================================================
     # 1. Search Cost Group Documents
@@ -233,8 +242,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns cost group documents matching the given filters.
         """
         try:
-            url = f"{client.api_base_url(API_PATH)}/{LIST_RESOURCE}"
-            headers = await client.get_headers_for_api(API_PATH)
+            url = f"{BASE_URL}/{LIST_RESOURCE}"
+            headers = await _auth.get_headers()
 
             params: dict = {
                 "realm": client.realm,
@@ -299,7 +308,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         """
         try:
             payload = await _fetch_cost_group_document_payload(
-                client, cost_group_document_id
+                _auth, client.realm, cost_group_document_id
             )
             return json.dumps(payload, default=str)
 
@@ -339,7 +348,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         """
         try:
             document_payload = await _fetch_cost_group_document_payload(
-                client, cost_group_document_id
+                _auth, client.realm, cost_group_document_id
             )
             components = _extract_cost_components(document_payload)
             data = components[skip : skip + min(top, 200)]
@@ -383,7 +392,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         """
         try:
             document_payload = await _fetch_cost_group_document_payload(
-                client, cost_group_document_id
+                _auth, client.realm, cost_group_document_id
             )
             for component in _extract_cost_components(document_payload):
                 component_id = component.get("id") or component.get("costComponentId")
@@ -434,7 +443,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         """
         try:
             document_payload = await _fetch_cost_group_document_payload(
-                client, cost_group_document_id
+                _auth, client.realm, cost_group_document_id
             )
             all_terms = _extract_cost_group_terms(document_payload)
             if supplier_id:
@@ -490,7 +499,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         """
         try:
             document_payload = await _fetch_cost_group_document_payload(
-                client, cost_group_document_id
+                _auth, client.realm, cost_group_document_id
             )
             all_terms = _extract_cost_group_terms(document_payload)
             component_terms = [
@@ -551,7 +560,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         """
         try:
             doc_header = await _fetch_cost_group_document_payload(
-                client, cost_group_document_id
+                _auth, client.realm, cost_group_document_id
             )
             components = _extract_cost_components(doc_header)
             terms = _extract_cost_group_terms(doc_header)
