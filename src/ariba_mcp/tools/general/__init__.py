@@ -19,14 +19,15 @@ APIs in this folder:
 Each person creates their own .py file in this folder.
 """
 
-from fastmcp import FastMCP, client
-import mcp
+from fastmcp import FastMCP
 
 from ariba_mcp.client import AribaClient
 
 
+
 def register(mcp: FastMCP, client: AribaClient) -> None:
     """Register all General/Admin tools from submodules."""
+
     from ariba_mcp.tools.general import _example
     from ariba_mcp.tools.general import Integration_monitoring_API
     
@@ -40,5 +41,4 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     
     from ariba_mcp.tools.general import public_procurement
     public_procurement.register(mcp, client)
-    
     
