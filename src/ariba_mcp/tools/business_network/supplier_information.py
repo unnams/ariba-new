@@ -27,7 +27,7 @@ from ariba_mcp.client import AribaClient
 from ariba_mcp.errors import handle_ariba_error
 
 # TODO: Confirm exact API path slug from the Developer Portal
-SUPPLIER_INFORMATION_API = "supplier-information/v1/prod"
+SUPPLIER_INFORMATION_API = "https://openapi.ariba.com/api/supplier-information/v1/prod"
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
