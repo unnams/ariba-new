@@ -24,6 +24,7 @@ from fastmcp import FastMCP
 from ariba_mcp.client import AribaClient
 
 
+
 def register(mcp: FastMCP, client: AribaClient) -> None:
     """Register all General/Admin tools from submodules."""
     from ariba_mcp.tools.general import _example, Integration_monitoring_API, asset_management
