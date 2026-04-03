@@ -38,3 +38,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     # supplier_data_extraction.register(mcp, client)
     from ariba_mcp.tools.supplier_management import risk_category_information
     risk_category_information.register(mcp, client)
+    supplier_risk_engagements.register(mcp, client)
+    supplier_data_api.register(mcp, client)
+    supplier_invite.register(mcp, client)
+    supplier_data_extraction.register(mcp, client)
+    ariba_network_supplier_profile.register(mcp, client)

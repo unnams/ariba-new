@@ -24,12 +24,11 @@ from fastmcp import FastMCP
 from ariba_mcp.client import AribaClient
 
 
+
 def register(mcp: FastMCP, client: AribaClient) -> None:
     """Register all General/Admin tools from submodules."""
-    from ariba_mcp.tools.general import _example
+    from ariba_mcp.tools.general import _example, Integration_monitoring_API, asset_management
 
     _example.register(mcp, client)
-
-    # As team members add files, import and register them here:
-    # from ariba_mcp.tools.general import audit_search
-    # audit_search.register(mcp, client)
+    Integration_monitoring_API.register(mcp, client)
+    asset_management.register(mcp, client)
