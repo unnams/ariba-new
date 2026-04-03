@@ -30,9 +30,16 @@ class AribaClient:
     in serverless/hosted environments like Prefect Horizon.
     """
 
-    def __init__(self, settings: AribaSettings) -> None:
-        self._settings = settings
-        self.auth = AribaAuthClient(settings)
+    def __init__(self, settings: AribaSettings, api_name: str | None = None) -> None:
+        self._settings = settings.get_api_settings(api_name) if api_name else settings
+        self.auth = AribaAuthClient(self._settings)
+
+    @property
+    def settings(self) -> AribaSettings:
+        return self._settings
+
+    def with_api(self, api_name: str) -> "AribaClient":
+        return AribaClient(self._settings, api_name)
 
     @property
     def realm(self) -> str:
@@ -125,3 +132,17 @@ class AribaClient:
         if params:
             all_params.update(params)
         return await self.get(url, all_params)
+
+    async def post_resource(
+        self,
+        api_path: str,
+        resource: str,
+        params: dict[str, Any] | None = None,
+        json_body: dict | None = None,
+    ) -> dict:
+        """Post to a resource endpoint."""
+        url = f"{self.base_url}/{api_path}/{resource}"
+        all_params: dict[str, Any] = {"realm": self.realm}
+        if params:
+            all_params.update(params)
+        return await self.post(url, json_body=json_body, params=all_params)
