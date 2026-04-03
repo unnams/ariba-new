@@ -28,7 +28,7 @@ from ariba_mcp.errors import handle_ariba_error
 
 # TODO: Confirm exact API path slug from the Developer Portal
 # "Environment Details" table on the discovery page for this API.
-CONTRACT_TERMS_API = "https://openapi.ariba.com/api/contract-terms-management/v1/prod"
+CONTRACT_TERMS_API = "contract-terms-management/v1/prod"
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:

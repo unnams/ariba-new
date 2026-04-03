@@ -126,7 +126,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         Returns all workspace templates available for the calling user's realm.
         """
         try:
-            url = f"{BASE_URL}/templates"
+            url = f"{BASE_URL}/workspaceTemplates"
             headers = await _auth.get_headers()
 
             async with httpx.AsyncClient() as http:

@@ -8,37 +8,31 @@ Key endpoints:
   POST /qualifications — Create user qualification records.
   PUT  /qualifications — Replace existing user qualification records.
 
-  
 Prerequisites:
   - User Qualification feature must be enabled for your site.
-  - Import User Qualification Fields and Field Mappings must be configured by a Customer Administrator.
+  - Import User Qualification Fields and Field Mappings must be configured
+    by a Customer Administrator.
   - All queries must be authenticated using OAuth authentication.
 
-Authentication: OAuth 2.0 Bearer token + apiKey header
-Response format: JSON
-
-Applies to: SAP Ariba Strategic Sourcing Suite; SAP Ariba Sourcing
+Authentication: OAuth 2.0 Bearer token + apiKey header (primary credentials)
 """
 
 import json
 
+import httpx
 from fastmcp import FastMCP
 
+from ariba_mcp.auth import AribaAuthClient
 from ariba_mcp.client import AribaClient
 from ariba_mcp.errors import handle_ariba_error
 
-API_PATH = "user-qualification/v1/prod"
-
-
-def _base_url(client: AribaClient) -> str:
-    """Resolve the configured production URL for this API."""
-    return client._settings.resolve_api_url(
-        client._settings.user_qualification_production_url, API_PATH
-    )
+BASE_URL = "https://openapi.ariba.com/api/user-qualification/v1/prod"
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
     """Register User Qualification API tools."""
+
+    _auth = AribaAuthClient(client.settings)
 
     @mcp.tool(
         name="ariba_user_qualification_create",
@@ -53,9 +47,18 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     async def user_qualification_create(payload_json: str) -> str:
         try:
             payload = json.loads(payload_json)
-            url = f"{_base_url(client)}/qualifications"
-            result = await client.post(url, json_body=payload, api_path=API_PATH)
-            return json.dumps(result, default=str)
+            headers = await _auth.get_headers()
+            headers["Content-Type"] = "application/json"
+            async with httpx.AsyncClient() as http:
+                resp = await http.post(
+                    f"{BASE_URL}/qualifications",
+                    headers=headers,
+                    params={"realm": client.realm},
+                    json=payload,
+                    timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
 
@@ -72,8 +75,17 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     async def user_qualification_replace(payload_json: str) -> str:
         try:
             payload = json.loads(payload_json)
-            url = f"{_base_url(client)}/qualifications"
-            result = await client.put(url, json_body=payload, api_path=API_PATH)
-            return json.dumps(result, default=str)
+            headers = await _auth.get_headers()
+            headers["Content-Type"] = "application/json"
+            async with httpx.AsyncClient() as http:
+                resp = await http.put(
+                    f"{BASE_URL}/qualifications",
+                    headers=headers,
+                    params={"realm": client.realm},
+                    json=payload,
+                    timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)

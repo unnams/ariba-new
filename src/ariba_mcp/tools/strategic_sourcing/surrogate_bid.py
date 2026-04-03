@@ -76,7 +76,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                 "participantId": participant_id,
             }
             result = await client.post_resource(
-                SURROGATE_BID_API, "jobs", payload, params=params, api_name="surrogate_bidding"
+                SURROGATE_BID_API, "jobs", params=params, json_body=payload
             )
             return json.dumps(result, default=str)
         except Exception as e:
@@ -120,7 +120,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                 "realm": realm,
             }
             result = await client.fetch_resource(
-                SURROGATE_BID_API, f"jobs/{job_id}", params, api_name="surrogate_bidding"
+                SURROGATE_BID_API, f"jobs/{job_id}", params
             )
             return json.dumps(result, default=str)
         except Exception as e:
@@ -166,7 +166,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                 "realm": realm,
             }
             result = await client.fetch_resource(
-                SURROGATE_BID_API, f"jobs/{job_id}/files/{file_id}", params, api_name="surrogate_bidding"
+                SURROGATE_BID_API, f"jobs/{job_id}/files/{file_id}", params
             )
             return json.dumps(result, default=str)
         except Exception as e:
@@ -223,7 +223,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                 "fileContent": file_base64,
             }
             result = await client.post_resource(
-                SURROGATE_BID_API, "jobs", payload, params=params, api_name="surrogate_bidding"
+                SURROGATE_BID_API, "jobs", params=params, json_body=payload
             )
             return json.dumps(result, default=str)
         except Exception as e:
@@ -278,7 +278,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                 "participantId": participant_id,
             }
             result = await client.post_resource(
-                SURROGATE_BID_API, "jobs", payload, params=params, api_name="surrogate_bidding"
+                SURROGATE_BID_API, "jobs", params=params, json_body=payload
             )
             return json.dumps(result, default=str)
         except Exception as e:

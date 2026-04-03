@@ -24,13 +24,7 @@ from ariba_mcp.client import AribaClient
 from ariba_mcp.errors import handle_ariba_error
 
 API_PATH = "contentlookup/v1/prod"
-
-
-def _base_url(client: AribaClient) -> str:
-    """Resolve the configured production URL for this API."""
-    return client._settings.resolve_api_url(
-        client._settings.content_lookup_production_url, API_PATH
-    )
+BASE_URL = "https://openapi.ariba.com/api/contentlookup/v1/prod"
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
@@ -57,8 +51,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         file_name: str = "lookup.csv",
     ) -> str:
         try:
-            url = f"{_base_url(client)}/lookup"
-            headers = await client.auth.get_headers(api_path=API_PATH)
+            url = f"{BASE_URL}/lookup"
+            headers = await client.auth.get_headers()
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     url,
@@ -92,8 +86,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         lookup_name: str, lookup_id: str | None = None
     ) -> str:
         try:
-            url = f"{_base_url(client)}/lookup"
-            headers = await client.auth.get_headers(api_path=API_PATH)
+            url = f"{BASE_URL}/lookup"
+            headers = await client.auth.get_headers()
             params = {"lookupname": lookup_name}
             if lookup_id:
                 params["id"] = lookup_id

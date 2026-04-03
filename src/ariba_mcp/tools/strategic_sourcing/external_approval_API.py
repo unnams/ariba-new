@@ -146,7 +146,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     params={
                         "realm": client.realm,
                         "user": user,
-                        "passwordadapter": password_adapter,
+                        "passwordAdapter": password_adapter,
                     },
                     json=payload,
                     timeout=60,
@@ -186,7 +186,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     params={
                         "realm": client.realm,
                         "user": user,
-                        "passwordadapter": password_adapter,
+                        "passwordAdapter": password_adapter,
                     },
                     json=payload,
                     timeout=60,
