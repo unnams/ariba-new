@@ -96,8 +96,11 @@ class AribaAuthClient:
     async def get_headers(self) -> dict[str, str]:
         """Return header set for an authenticated Ariba API request."""
         token = await self.get_token()
-        return {
+        headers = {
             "Authorization": f"Bearer {token}",
             "apiKey": self._settings.ariba_api_key,
             "Accept": "application/json",
         }
+        if self._settings.ariba_network_id:
+            headers["X-ARIBA-NETWORK-ID"] = self._settings.ariba_network_id
+        return headers
