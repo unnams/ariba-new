@@ -19,6 +19,25 @@ class AribaSettings(BaseSettings):
     - ARIBA_CLIENT_SECRET: OAuth 2.0 application client secret
     - ARIBA_API_KEY      : Application key from the developer portal
 
+    Optional per-API credentials for testing multiple Ariba APIs with separate
+    application keys or client credentials:
+    - PRODUCT_HIERARCHY_MANAGEMENT_CLIENT_ID
+    - PRODUCT_HIERARCHY_MANAGEMENT_CLIENT_SECRET
+    - PRODUCT_HIERARCHY_MANAGEMENT_API_KEY
+    - PRODUCT_HIERARCHY_MANAGEMENT_BASIC_AUTH
+    - CONTRACT_TERMS_MANAGEMENT_CLIENT_ID
+    - CONTRACT_TERMS_MANAGEMENT_CLIENT_SECRET
+    - CONTRACT_TERMS_MANAGEMENT_API_KEY
+    - CONTRACT_TERMS_MANAGEMENT_BASIC_AUTH
+    - ORDER_CHANGE_REQUESTS_SUPPLIER_CLIENT_ID
+    - ORDER_CHANGE_REQUESTS_SUPPLIER_CLIENT_SECRET
+    - ORDER_CHANGE_REQUESTS_SUPPLIER_API_KEY
+    - ORDER_CHANGE_REQUESTS_SUPPLIER_BASIC_AUTH
+    - SUPPLIER_INFORMATION_CLIENT_ID
+    - SUPPLIER_INFORMATION_CLIENT_SECRET
+    - SUPPLIER_INFORMATION_API_KEY
+    - SUPPLIER_INFORMATION_BASIC_AUTH
+
     One team member registers the application on the SAP Ariba Developer Portal,
     then shares the .env file (or vault credentials) with the rest of the team.
     """
@@ -44,16 +63,61 @@ class AribaSettings(BaseSettings):
     ariba_invite_client_secret: str = ""
     ariba_invite_api_key: str = ""
 
+    # Optional per-API credentials (use when an API has its own application key)
+    product_hierarchy_management_client_id: str | None = None
+    product_hierarchy_management_client_secret: str | None = None
+    product_hierarchy_management_api_key: str | None = None
+    product_hierarchy_management_basic_auth: str | None = None
+    contract_terms_management_client_id: str | None = None
+    contract_terms_management_client_secret: str | None = None
+    contract_terms_management_api_key: str | None = None
+    contract_terms_management_basic_auth: str | None = None
+    order_change_requests_supplier_client_id: str | None = None
+    order_change_requests_supplier_client_secret: str | None = None
+    order_change_requests_supplier_api_key: str | None = None
+    order_change_requests_supplier_basic_auth: str | None = None
+    supplier_information_client_id: str | None = None
+    supplier_information_client_secret: str | None = None
+    supplier_information_api_key: str | None = None
+    supplier_information_basic_auth: str | None = None
+
     # Base URLs (SAP Ariba standard endpoints)
     ariba_oauth_url: str = "https://api.ariba.com"
     ariba_api_url: str = "https://openapi.ariba.com/api"
+
+    def get_api_settings(self, api_name: str) -> "AribaSettings":
+        api_name = api_name.lower()
+        supported_api_names = {
+            "product_hierarchy_management",
+            "contract_terms_management",
+            "order_change_requests_supplier",
+            "supplier_information",
+        }
+        if api_name not in supported_api_names:
+            return self
+
+        update: dict[str, str] = {}
+        credential_map = {
+            "client_id": "ariba_client_id",
+            "client_secret": "ariba_client_secret",
+            "api_key": "ariba_api_key",
+        }
+
+        for source_suffix, target_field in credential_map.items():
+            source_attr = f"{api_name}_{source_suffix}"
+            value = getattr(self, source_attr, None)
+            if value:
+                update[target_field] = value
+
+        return self.model_copy(update=update) if update else self
+    ariba_network_id: str | None = None
 
     # Tuning
     request_timeout: int = 30
     default_page_size: int = 50
     max_page_size: int = 10000  # Ariba APIs support up to 10k per page for async
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
 @lru_cache
