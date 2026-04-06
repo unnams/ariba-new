@@ -1,24 +1,4 @@
-"""Audit Search API.
-
-Owner: Vanshika
-Prod URL: https://openapi.ariba.com/api/audit-search/v2/prod
-Docs: https://help.sap.com/doc/e42379dea91647fb8fcec25f8fdbddd3/cloud/en-US/index.html
-
-Correct endpoint (discovered via testing):
-  GET /audits?tenantId={realm}&auditType={type}&searchStartTime={date}
-
-Required params:
-  tenantId        — realm name (e.g. BrainBoxDSAPP-T)  [NOT "realm"]
-  auditType       — one of: GenericAction, DataModification, Integration,
-                    ConfigurationModification, Security, DataAccess
-  searchStartTime — date in yyyy-MM-dd'T'HH:mm:ss+0000 format
-                    must be within ~90 days of now
-
-Authentication: OAuth 2.0 Bearer token + apiKey header (Vanshika audit creds)
-"""
-
 import json
-import os
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -26,6 +6,7 @@ from fastmcp import FastMCP
 
 from ariba_mcp.auth import DirectAuthClient
 from ariba_mcp.client import AribaClient
+from ariba_mcp.config import get_settings
 from ariba_mcp.errors import handle_ariba_error
 
 BASE_URL = "https://openapi.ariba.com/api/audit-search/v2/prod"
@@ -42,14 +23,13 @@ VALID_AUDIT_TYPES = [
 
 def _make_auth() -> DirectAuthClient:
     return DirectAuthClient(
-        client_id=os.getenv("AUDIT_SEARCH_CLIENT_ID", ""),
-        client_secret=os.getenv("AUDIT_SEARCH_CLIENT_SECRET", ""),
-        api_key=os.getenv("AUDIT_SEARCH_API_KEY", ""),
+        client_id=get_settings().audit_search_client_id,
+        client_secret=get_settings().audit_search_client_secret,
+        api_key=get_settings().audit_search_api_key,
     )
 
 
 def _format_time(iso_str: str | None = None, hours_back: int | None = None) -> str:
-    """Return date in yyyy-MM-dd'T'HH:mm:ss+0000 format required by the API."""
     if iso_str:
         dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
     elif hours_back:
@@ -60,7 +40,6 @@ def _format_time(iso_str: str | None = None, hours_back: int | None = None) -> s
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
-    """Register Audit Search API tools."""
 
     _auth = _make_auth()
 

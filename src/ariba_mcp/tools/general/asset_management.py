@@ -1,24 +1,11 @@
-"""Asset Management API.
-
-Owner: Rohit Naik
-Prod URL: https://openapi.ariba.com/api/asset-management/v1/prod
-
-Manage asset line items in SAP Ariba purchase requisitions.
-List requisitions with asset items, count them, and update asset numbers.
-
-Authentication: OAuth 2.0 Bearer token + apiKey header (own credentials)
-
-Note: Requires the Asset Management feature to be enabled in the realm.
-"""
-
 import json
-import os
 
 import httpx
 from fastmcp import FastMCP
 
 from ariba_mcp.auth import DirectAuthClient
 from ariba_mcp.client import AribaClient
+from ariba_mcp.config import get_settings
 from ariba_mcp.errors import handle_ariba_error
 
 BASE_URL = "https://openapi.ariba.com/api/asset-management/v1/prod"
@@ -26,9 +13,9 @@ BASE_URL = "https://openapi.ariba.com/api/asset-management/v1/prod"
 
 def _make_auth() -> DirectAuthClient:
     return DirectAuthClient(
-        client_id=os.getenv("API_ASSET_MANAGEMENT_CLIENT_ID", ""),
-        client_secret=os.getenv("API_ASSET_MANAGEMENT_CLIENT_SECRET", ""),
-        api_key=os.getenv("API_ASSET_MANAGEMENT_API_KEY", ""),
+        client_id=get_settings().api_asset_management_client_id,
+        client_secret=get_settings().api_asset_management_client_secret,
+        api_key=get_settings().api_asset_management_api_key,
     )
 
 

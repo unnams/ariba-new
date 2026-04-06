@@ -1,22 +1,3 @@
-"""User Qualification API.
-
-Owner: Anil
-Prod URL: https://openapi.ariba.com/api/user-qualification/v1/prod
-Docs: https://help.sap.com/doc/1d24538317664af48135fbf225ee924e/cloud/en-US/index.html
-
-Key endpoints:
-  POST /qualifications — Create user qualification records.
-  PUT  /qualifications — Replace existing user qualification records.
-
-Prerequisites:
-  - User Qualification feature must be enabled for your site.
-  - Import User Qualification Fields and Field Mappings must be configured
-    by a Customer Administrator.
-  - All queries must be authenticated using OAuth authentication.
-
-Authentication: OAuth 2.0 Bearer token + apiKey header (primary credentials)
-"""
-
 import json
 
 import httpx
@@ -30,7 +11,6 @@ BASE_URL = "https://openapi.ariba.com/api/user-qualification/v1/prod"
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
-    """Register User Qualification API tools."""
 
     _auth = AribaAuthClient(client.settings)
 

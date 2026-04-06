@@ -1,29 +1,3 @@
-"""Document Approval API.
-
-Owner: Anim
-Prod URL: https://openapi.ariba.com/api/approval/v2/prod
-Docs: https://help.sap.com/doc/f9cd5fe02da34e5a9c0ddd8161ee04d1/cloud/en-US/index.html
-
-Key endpoints:
-  GET  /approvables          — List all pending approvable documents (requisitions, invoices)
-  GET  /approvables/{id}     — Get details for a specific approvable document
-  GET  /changes              — Get list of document IDs whose approval nodes changed state
-  PATCH /approvables/{id}    — Approve or Deny a document (action in request body)
-  GET  /groups               — List approval groups
-  GET  /groups/{groupId}     — Get details of a specific approval group
-
-Authentication: OAuth 2.0 Bearer token + apiKey header
-Response format: JSON
-
-SAP Ariba Document Approval API allows a client application to:
-  - List and retrieve requisitions, invoices, or user profiles pending approval
-  - Approve or deny those documents on behalf of an authorized approver
-  - Monitor changes in approval node states using the /changes polling endpoint
-  - Look up approval groups and their members (including delegate support)
-
-Rate limits: 300 req/sec · 800 req/min · 35,000 req/hr
-"""
-
 import json
 
 import httpx
@@ -32,24 +6,11 @@ from fastmcp import FastMCP
 from ariba_mcp.client import AribaClient
 from ariba_mcp.errors import handle_ariba_error
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
 API_PATH = "approval/v2/prod"
 
 
-# ---------------------------------------------------------------------------
-# Registration
-# ---------------------------------------------------------------------------
-
-
 def register(mcp: FastMCP, client: AribaClient) -> None:
-    """Register all Document Approval API tools with the MCP server."""
 
-    # ------------------------------------------------------------------
-    # 1. List Pending Approvables
-    # ------------------------------------------------------------------
     @mcp.tool(
         name="ariba_approval_list_approvables",
         description=(
@@ -75,12 +36,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         skip: int | None = None,
         count: bool = False,
     ) -> str:
-        """
-        GET /approvables
-        Returns all approvable documents waiting for approval action.
-
-        ApprovableType values: Requisition, Invoice, UserProfile
-        """
         try:
             url = f"{client.base_url}/{API_PATH}/approvables"
             headers = await client.auth.get_headers()
@@ -107,9 +62,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
 
-    # ------------------------------------------------------------------
-    # 2. Get Approvable by ID
-    # ------------------------------------------------------------------
     @mcp.tool(
         name="ariba_approval_get_approvable",
         description=(
@@ -126,10 +78,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         },
     )
     async def get_approvable(approvable_id: str) -> str:
-        """
-        GET /approvables/{approvableId}
-        Returns detailed document info including approval graph structure.
-        """
         try:
             url = f"{client.base_url}/{API_PATH}/approvables/{approvable_id}"
             headers = await client.auth.get_headers()
@@ -148,9 +96,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
 
-    # ------------------------------------------------------------------
-    # 3. Get Approval Node Changes  (polling / change-tracking endpoint)
-    # ------------------------------------------------------------------
     @mcp.tool(
         name="ariba_approval_get_changes",
         description=(
@@ -173,16 +118,10 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         approvable_type: str | None = None,
         top: int | None = None,
     ) -> str:
-        """
-        GET /changes
-        Tracks changes to approval nodes. Supports incremental polling via changeSequenceId.
-        Use $filter: changeSequenceId gt <last_id> to only retrieve new changes.
-        """
         try:
             url = f"{client.base_url}/{API_PATH}/changes"
             headers = await client.auth.get_headers()
 
-            # Build OData filter
             filter_parts = [f"changeSequenceId gt {change_sequence_id}"]
             if approvable_type:
                 filter_parts.append(f"ApprovableType eq '{approvable_type}'")
@@ -205,9 +144,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
 
-    # ------------------------------------------------------------------
-    # 4. Approve a Document
-    # ------------------------------------------------------------------
     @mcp.tool(
         name="ariba_approval_approve_document",
         description=(
@@ -229,10 +165,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         approver_id: str,
         comment: str = "",
     ) -> str:
-        """
-        PATCH /approvables/{approvableId}
-        Body: { "action": "approve", "approverId": "...", "comment": "..." }
-        """
         try:
             url = f"{client.base_url}/{API_PATH}/approvables/{approvable_id}"
             headers = await client.auth.get_headers()
@@ -266,9 +198,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
 
-    # ------------------------------------------------------------------
-    # 5. Deny a Document
-    # ------------------------------------------------------------------
     @mcp.tool(
         name="ariba_approval_deny_document",
         description=(
@@ -290,10 +219,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         approver_id: str,
         comment: str = "",
     ) -> str:
-        """
-        PATCH /approvables/{approvableId}
-        Body: { "action": "deny", "approverId": "...", "comment": "..." }
-        """
         try:
             url = f"{client.base_url}/{API_PATH}/approvables/{approvable_id}"
             headers = await client.auth.get_headers()
@@ -327,9 +252,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
 
-    # ------------------------------------------------------------------
-    # 6. List Approval Groups
-    # ------------------------------------------------------------------
     @mcp.tool(
         name="ariba_approval_list_groups",
         description=(
@@ -348,10 +270,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         top: int | None = None,
         skip: int | None = None,
     ) -> str:
-        """
-        GET /groups
-        Returns all approval groups configured in the realm.
-        """
         try:
             url = f"{client.base_url}/{API_PATH}/groups"
             headers = await client.auth.get_headers()
@@ -371,9 +289,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
 
-    # ------------------------------------------------------------------
-    # 7. Get Approval Group by ID
-    # ------------------------------------------------------------------
     @mcp.tool(
         name="ariba_approval_get_group",
         description=(
@@ -389,10 +304,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         },
     )
     async def get_group(group_id: str) -> str:
-        """
-        GET /groups/{groupId}
-        Returns details for a single approval group.
-        """
         try:
             url = f"{client.base_url}/{API_PATH}/groups/{group_id}"
             headers = await client.auth.get_headers()
@@ -411,9 +322,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
 
-    # ------------------------------------------------------------------
-    # 8. Approve as Delegate
-    # ------------------------------------------------------------------
     @mcp.tool(
         name="ariba_approval_approve_as_delegate",
         description=(
@@ -436,11 +344,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         original_approver_id: str,
         comment: str = "",
     ) -> str:
-        """
-        PATCH /approvables/{approvableId}
-        Body: { "action": "approve", "approverId": "<delegate>",
-                "delegateForApproverId": "<original_approver>", "comment": "..." }
-        """
         try:
             url = f"{client.base_url}/{API_PATH}/approvables/{approvable_id}"
             headers = await client.auth.get_headers()
@@ -476,9 +379,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
 
-    # ------------------------------------------------------------------
-    # 9. Deny as Delegate
-    # ------------------------------------------------------------------
     @mcp.tool(
         name="ariba_approval_deny_as_delegate",
         description=(
@@ -500,11 +400,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         original_approver_id: str,
         comment: str = "",
     ) -> str:
-        """
-        PATCH /approvables/{approvableId}
-        Body: { "action": "deny", "approverId": "<delegate>",
-                "delegateForApproverId": "<original_approver>", "comment": "..." }
-        """
         try:
             url = f"{client.base_url}/{API_PATH}/approvables/{approvable_id}"
             headers = await client.auth.get_headers()
@@ -539,6 +434,3 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
 
         except Exception as e:
             return handle_ariba_error(e)
-        
-
-        

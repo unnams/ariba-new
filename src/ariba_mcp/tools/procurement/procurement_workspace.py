@@ -1,84 +1,23 @@
-"""Create Procurement Workspace API.
-
-Owner: Vanshika
-Prod URL: https://openapi.ariba.com/api/procurement-workspace/v1/prod
-Docs: https://help.sap.com/doc/bffc0be7c97c48c2b0f9a95fe215b3b7/cloud/en-US/index.html
-
-Summary:
-    For buying organizations with SAP Ariba Procurement solutions that want to use
-    an external application to create procurement workspace projects in SAP Ariba Sourcing.
-    Procurement workspaces act as a project-level repository to manage complex
-    procurement activities (requisitions, invoices, compliance docs) as a structured
-    project spanning multiple stakeholders.
-
-Prerequisites (must be configured in SAP Ariba Sourcing BEFORE using this API):
-    1. Site must have "Ariba Procure To Pay" entitlement.
-    2. Procurement workspace project templates must exist in Ariba Sourcing.
-    3. Header forms & process names must be configured (Forms Builder + process mapping).
-    4. Calling user must be in "Procurement Project Creator" user group.
-    5. Parameters Application.Procurement.enableProcurementWorkspace = Yes.
-
-Endpoints covered:
-  ── Workspace Management ───────────────────────────────────────────────────
-  POST  /workspaces                             Create a new procurement workspace
-  GET   /workspaces                             List / search procurement workspaces
-  GET   /workspaces/{workspaceId}               Get details of a specific workspace
-  PATCH /workspaces/{workspaceId}               Update header fields of a workspace
-  PATCH /workspaces/{workspaceId}/state         Change the state of a workspace
-
-  ── Template Discovery ─────────────────────────────────────────────────────
-  GET   /templates                              List available workspace templates
-
-  ── Workspace Documents (linked procurement docs) ──────────────────────────
-  GET   /workspaces/{workspaceId}/documents     List documents linked to a workspace
-  POST  /workspaces/{workspaceId}/documents     Link a document to a workspace
-
-Authentication: OAuth 2.0 Bearer token + apiKey header
-Response format: JSON
-
-Workspace IDs: SAP Ariba auto-generates IDs prefixed with "WS" (e.g. WS1234567).
-
-Key workflow:
-    1. GET /templates                  → discover available templateId values
-    2. POST /workspaces                → create workspace (returns workspaceId)
-    3. GET  /workspaces/{id}           → verify workspace was created correctly
-    4. PATCH /workspaces/{id}          → optionally update header fields
-    5. GET  /workspaces/{id}/documents → track linked procurement documents
-    6. PATCH /workspaces/{id}/state    → advance workspace state when ready
-
-Workspace states:
-    Draft → In Review → Approved → Active → Closed
-    (Available transitions depend on your realm's process configuration)
-
-IMPORTANT: Custom header fields must be configured in the realm before being
-passed via the API. Passing unknown custom fields returns HTTP 400.
-"""
-
 import json
-import os
 
 import httpx
 from fastmcp import FastMCP
 
 from ariba_mcp.auth import DirectAuthClient
 from ariba_mcp.client import AribaClient
+from ariba_mcp.config import get_settings
 from ariba_mcp.errors import handle_ariba_error
-
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
 
 BASE_URL = "https://openapi.ariba.com/api/procurement-workspace/v1/prod"
 
 
 def _make_auth() -> DirectAuthClient:
     return DirectAuthClient(
-        client_id=os.getenv("PROCUREMENT_WORKSPACE_CLIENT_ID", ""),
-        client_secret=os.getenv("PROCUREMENT_WORKSPACE_CLIENT_SECRET", ""),
-        api_key=os.getenv("PROCUREMENT_WORKSPACE_API_KEY", ""),
+        client_id=get_settings().procurement_workspace_client_id,
+        client_secret=get_settings().procurement_workspace_client_secret,
+        api_key=get_settings().procurement_workspace_api_key,
     )
 
-# Valid workspace states for the state-change endpoint
 WORKSPACE_STATES = [
     "Draft",
     "Submitted",
@@ -90,19 +29,9 @@ WORKSPACE_STATES = [
 ]
 
 
-# ---------------------------------------------------------------------------
-# Registration
-# ---------------------------------------------------------------------------
-
-
 def register(mcp: FastMCP, client: AribaClient) -> None:
-    """Register all Create Procurement Workspace API tools with the MCP server."""
 
     _auth = _make_auth()
-
-    # ======================================================================
-    # 1. List Available Templates
-    # ======================================================================
 
     @mcp.tool(
         name="ariba_procure_workspace_list_templates",
@@ -121,10 +50,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         },
     )
     async def list_templates() -> str:
-        """
-        GET /templates
-        Returns all workspace templates available for the calling user's realm.
-        """
         try:
             url = f"{BASE_URL}/workspaceTemplates"
             headers = await _auth.get_headers()
@@ -142,10 +67,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
 
         except Exception as e:
             return handle_ariba_error(e)
-
-    # ======================================================================
-    # 2. Create Procurement Workspace
-    # ======================================================================
 
     @mcp.tool(
         name="ariba_procure_workspace_create",
@@ -186,17 +107,11 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         regions: list[str] | None = None,
         custom_fields: dict | None = None,
     ) -> str:
-        """
-        POST /workspaces
-        Creates a new procurement workspace project using the given template.
-        Returns workspaceId on success.
-        """
         try:
             url = f"{BASE_URL}/workspaces"
             headers = await _auth.get_headers()
             headers["Content-Type"] = "application/json"
 
-            # Build request body — only include fields that were provided
             body: dict = {
                 "title": title,
                 "templateId": template_id,
@@ -223,7 +138,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                 body["regions"] = [{"uniqueName": r} for r in regions]
 
             if custom_fields:
-                # Custom fields are passed as a flat dict: fieldName → value
                 body["customFields"] = custom_fields
 
             async with httpx.AsyncClient() as http:
@@ -251,10 +165,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
 
-    # ======================================================================
-    # 3. List / Search Workspaces
-    # ======================================================================
-
     @mcp.tool(
         name="ariba_procure_workspace_list",
         description=(
@@ -279,10 +189,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         top: int = 20,
         skip: int = 0,
     ) -> str:
-        """
-        GET /workspaces
-        Returns all procurement workspaces matching filter criteria.
-        """
         try:
             url = f"{BASE_URL}/workspaces"
             headers = await _auth.get_headers()
@@ -304,10 +210,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
 
-    # ======================================================================
-    # 4. Get Workspace by ID
-    # ======================================================================
-
     @mcp.tool(
         name="ariba_procure_workspace_get",
         description=(
@@ -326,10 +228,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         },
     )
     async def get_workspace(workspace_id: str) -> str:
-        """
-        GET /workspaces/{workspaceId}
-        Returns full header details for a single procurement workspace.
-        """
         try:
             url = f"{BASE_URL}/workspaces/{workspace_id}"
             headers = await _auth.get_headers()
@@ -347,10 +245,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
 
         except Exception as e:
             return handle_ariba_error(e)
-
-    # ======================================================================
-    # 5. Update Workspace Header Fields
-    # ======================================================================
 
     @mcp.tool(
         name="ariba_procure_workspace_update",
@@ -381,10 +275,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         regions: list[str] | None = None,
         custom_fields: dict | None = None,
     ) -> str:
-        """
-        PATCH /workspaces/{workspaceId}
-        Partial update — only supplied fields are changed.
-        """
         try:
             url = f"{BASE_URL}/workspaces/{workspace_id}"
             headers = await _auth.get_headers()
@@ -430,10 +320,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
 
-    # ======================================================================
-    # 6. Change Workspace State
-    # ======================================================================
-
     @mcp.tool(
         name="ariba_procure_workspace_change_state",
         description=(
@@ -460,11 +346,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         new_state: str,
         comment: str = "",
     ) -> str:
-        """
-        PATCH /workspaces/{workspaceId}/state
-        Body: { "state": "<newState>", "comment": "<optional>" }
-        Transitions the workspace to the specified state.
-        """
         try:
             url = f"{BASE_URL}/workspaces/{workspace_id}/state"
             headers = await _auth.get_headers()
@@ -495,10 +376,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
 
-    # ======================================================================
-    # 7. List Documents Linked to Workspace
-    # ======================================================================
-
     @mcp.tool(
         name="ariba_procure_workspace_list_documents",
         description=(
@@ -520,10 +397,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         top: int = 50,
         skip: int = 0,
     ) -> str:
-        """
-        GET /workspaces/{workspaceId}/documents
-        Returns all documents associated with the workspace.
-        """
         try:
             url = f"{BASE_URL}/workspaces/{workspace_id}/documents"
             headers = await _auth.get_headers()
@@ -542,10 +415,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
 
         except Exception as e:
             return handle_ariba_error(e)
-
-    # ======================================================================
-    # 8. Link a Document to a Workspace
-    # ======================================================================
 
     @mcp.tool(
         name="ariba_procure_workspace_link_document",
@@ -569,11 +438,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         document_id: str,
         document_type: str,
     ) -> str:
-        """
-        POST /workspaces/{workspaceId}/documents
-        Body: { "documentId": "...", "documentType": "..." }
-        Links an existing document to the workspace.
-        """
         try:
             url = f"{BASE_URL}/workspaces/{workspace_id}/documents"
             headers = await _auth.get_headers()

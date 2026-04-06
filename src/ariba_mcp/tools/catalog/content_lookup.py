@@ -1,20 +1,3 @@
-"""
-Content Lookup API
-Owner: Anil
-Prod URL: https://openapi.ariba.com/api/contentlookup/v1/prod
-Docs: https://help.sap.com/doc/31b9e31387e74dc485a419433fa14b09/cloud/en-US/index.html
-
-Key endpoints:
-  POST /lookup
-      Upload a lookup file to update an existing lookup in the CMS.
-  GET /lookup?lookupname={lookup_name}[&id={unique_id}]
-      Fetch the status of a lookup. If `id` is omitted, returns statuses
-      for ALL versions of the named lookup.
-
-Authentication: OAuth 2.0 Bearer token + apiKey header
-Response format: JSON
-"""
-
 import json
 
 import httpx
@@ -28,7 +11,6 @@ BASE_URL = "https://openapi.ariba.com/api/contentlookup/v1/prod"
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
-    """Register Content Lookup API tools."""
 
     @mcp.tool(
         name="ariba_content_lookup_update",
@@ -105,4 +87,3 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     return resp.text
         except Exception as e:
             return handle_ariba_error(e)
-    #content 

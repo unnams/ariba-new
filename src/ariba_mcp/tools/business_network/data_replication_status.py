@@ -1,18 +1,3 @@
-"""Data Replication Status for Multi-ERP Configurations API.
-
-Owner: AYUB SHAIK
-Prod URL: https://openapi.ariba.com/api/replication/v1/prod
-Docs Index: https://help.sap.com/doc/6350dec774d9447b8ce1823a91ac698d/cloud/en-US/index.html?forSiteMap=true
-Docs Topic: https://help.sap.com/doc/6350dec774d9447b8ce1823a91ac698d/cloud/en-US/f2ae044c66e84ffd80584f2013954155.html?forSiteMap=true
-
-Key endpoint:
-  GET /replicationStatus — Returns the status of data replication across multi-ERP configurations
-  Accepts query parameters to filter by realm, object type, status, target site, etc.
-
-Authentication: OAuth 2.0 Bearer token + apiKey header
-Response format: JSON
-"""
-
 import json
 
 import httpx
@@ -25,7 +10,6 @@ API_PATH = "replication/v1/prod"
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
-    """Register Data Replication Status for Multi-ERP Configurations API tools."""
 
     @mcp.tool(
         name="ariba_replication_list_all",
@@ -39,7 +23,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     async def list_all_replication_records(realm: str) -> str:
         try:
             url = f"{client.base_url}/{API_PATH}/statuses"
-            headers = await client.auth.get_headers()    
+            headers = await client.auth.get_headers()
 
             async with httpx.AsyncClient() as http:
                 resp = await http.get(
@@ -131,7 +115,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             data = resp.json()
             records = data if isinstance(data, list) else data.get("replicationRecords", [])
 
-            # Client-side guard in case the API does not filter server-side
             if status:
                 records = [r for r in records if r.get("status") == status]
 
@@ -177,7 +160,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             data = resp.json()
             records = data if isinstance(data, list) else data.get("replicationRecords", [])
 
-            # Client-side guard in case the API does not filter server-side
             if target_site:
                 records = [r for r in records if r.get("targetSite") == target_site]
 
@@ -216,7 +198,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             data = resp.json()
             records = data if isinstance(data, list) else data.get("replicationRecords", [])
 
-            # Deduplicate by objectType + targetSite composite key
             unique: dict = {}
             for r in records:
                 key = f"{r.get('objectType', '')}::{r.get('targetSite', '')}"

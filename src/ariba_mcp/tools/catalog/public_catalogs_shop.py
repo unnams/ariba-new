@@ -1,25 +1,3 @@
-"""Public Catalogs Shop API.
-
-Owner: Anil
-Prod URL: https://openapi.ariba.com/api/mxseller-catalog-provider/v1/prod
-Docs: https://help.sap.com/doc/4130eaebb7be426c8085437f1fb4947c/cloud/en-US/index.html
-
-Key endpoints:
-  GET /Shops({shopID})              — Retrieve all items and facets from a public catalog shop.
-  GET /Shops({shopID})/Items        — Return all items and their details from a public catalog shop.
-  GET /Shops({shopID})/AutoComplete — Typeahead search: retrieve matching search suggestions.
-
-  
-Prerequisites:
-  - Access to SAP Ariba Developer Portal to create an application and request API access.
-  - All queries must be authenticated using OAuth authentication.
-  - Search 3.0 must be enabled for your site via a Designated Support Contact case.
-  - Administrator must configure a destination in SAP BTP cockpit to connect to the shopping site.
-
-Authentication: OAuth 2.0 Bearer token + apiKey header
-Response format: JSON
-"""
-
 import json
 
 from fastmcp import FastMCP
@@ -32,7 +10,6 @@ BASE_URL = "https://openapi.ariba.com/api/mxseller-catalog-provider/v1/prod"
 
 
 def _resolve_shop_id(shop_id: str | None) -> str | None:
-    """Return the provided shop_id (no fallback — shop_id is required)."""
     return shop_id
 
 
@@ -44,7 +21,6 @@ MISSING_SHOP_ID_MSG = (
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
-    """Register Public Catalogs Shop API tools."""
 
     @mcp.tool(
         name="ariba_catalog_public_get_shop",

@@ -1,14 +1,3 @@
-"""Supplier Invite API.
-
-Owner: Nitish SM
-Prod URL: https://openapi.ariba.com/api/supplier-invite/v2/prod
-Docs: https://help.sap.com/doc/8903b23ba81845efb4760ba9ad2096bb/cloud/en-US/03064470056c477288514f0d68b69bf3.html
-
-Creates vendor records in SAP Business Network and manages supplier invitations.
-
-Authentication: OAuth 2.0 Bearer token + apiKey header (own credentials)
-"""
-
 import json
 
 import httpx
@@ -33,7 +22,6 @@ def _make_auth() -> DirectAuthClient:
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
-    """Register Supplier Invite API tools."""
 
     _auth = _make_auth()
 

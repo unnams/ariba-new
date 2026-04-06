@@ -63,6 +63,84 @@ class AribaSettings(BaseSettings):
     ariba_invite_client_secret: str = ""
     ariba_invite_api_key: str = ""
 
+    # Supplier Data Pagination API credentials
+    ariba_sdp_client_id: str = ""
+    ariba_sdp_client_secret: str = ""
+    ariba_sdp_api_key: str = ""
+
+    # Sourcing Approval API credentials
+    sourcing_approval_client_id: str = ""
+    sourcing_approval_client_secret: str = ""
+    sourcing_approval_api_key: str = ""
+
+    # Integration Monitoring for Procurement API credentials
+    integration_monitoring_client_id: str = ""
+    integration_monitoring_client_secret: str = ""
+    integration_monitoring_api_key: str = ""
+
+    # Pranathi APIs (Master Data, Pricing, Sourcing Event Status)
+    pranathi_client_id: str = ""
+    pranathi_client_secret: str = ""
+    pranathi_api_key: str = ""
+
+    # Invoice API credentials
+    invoice_ariba_client_id: str = ""
+    invoice_ariba_client_secret: str = ""
+    invoice_ariba_api_key: str = ""
+
+    # Catalog Connectivity Service API credentials
+    catalog_ariba_client_id: str = ""
+    catalog_ariba_client_secret: str = ""
+    catalog_ariba_api_key: str = ""
+
+    # Data Replication Status credentials
+    replication_ariba_client_id: str = ""
+    replication_ariba_client_secret: str = ""
+    replication_ariba_api_key: str = ""
+
+    # Surrogate Bidding API credentials
+    api_surrogate_bidding_client_id: str = ""
+    api_surrogate_bidding_client_secret: str = ""
+    api_surrogate_bidding_api_key: str = ""
+
+    # Asset Management API credentials
+    api_asset_management_client_id: str = ""
+    api_asset_management_client_secret: str = ""
+    api_asset_management_api_key: str = ""
+
+    # Audit Search API credentials
+    audit_search_client_id: str = ""
+    audit_search_client_secret: str = ""
+    audit_search_api_key: str = ""
+
+    # Document Approval API credentials
+    document_approval_client_id: str = ""
+    document_approval_client_secret: str = ""
+    document_approval_api_key: str = ""
+
+    # Contract Compliance API credentials
+    contract_compliance_client_id: str = ""
+    contract_compliance_client_secret: str = ""
+    contract_compliance_api_key: str = ""
+
+    # Procurement Workspace API credentials
+    procurement_workspace_client_id: str = ""
+    procurement_workspace_client_secret: str = ""
+    procurement_workspace_api_key: str = ""
+
+    # Risk Category Information API credentials
+    risk_category_information_client_id: str = ""
+    risk_category_information_client_secret: str = ""
+    risk_category_information_api_key: str = ""
+
+    # Cost Breakdown API credentials
+    cost_breakdown_client_id: str = ""
+    cost_breakdown_client_secret: str = ""
+    cost_breakdown_api_key: str = ""
+
+    # Strategic Sourcing Event Status API URL (Pranathi)
+    ariba_event_status_api: str = "https://openapi.ariba.com/api/strategicsourcing-eventstatus/v2/prod"
+
     # Optional per-API credentials (use when an API has its own application key)
     product_hierarchy_management_client_id: str | None = None
     product_hierarchy_management_client_secret: str | None = None

@@ -1,33 +1,22 @@
-"""External Approval API for Sourcing & Supplier Management.
-
-Owner: Pranathi
-Prod URL: https://openapi.ariba.com/api/sourcing-approval/v2/prod
-
-Retrieve pending sourcing approvals, get approval changes,
-approve or deny sourcing tasks.
-
-Authentication: OAuth 2.0 Bearer token + apiKey header (Pranathi credentials)
-Note: Some endpoints require user + passwordAdapter query params for user context.
-"""
-
 import json
-import os
 
 import httpx
 from fastmcp import FastMCP
 
 from ariba_mcp.auth import DirectAuthClient
 from ariba_mcp.client import AribaClient
+from ariba_mcp.config import get_settings
 from ariba_mcp.errors import handle_ariba_error
 
 BASE_URL = "https://openapi.ariba.com/api/sourcing-approval/v2/prod"
 
 
 def _make_auth() -> DirectAuthClient:
+    s = get_settings()
     return DirectAuthClient(
-        client_id=os.getenv("PRANATHI_CLIENT_ID", ""),
-        client_secret=os.getenv("PRANATHI_CLIENT_SECRET", ""),
-        api_key=os.getenv("PRANATHI_API_KEY", ""),
+        client_id=s.sourcing_approval_client_id,
+        client_secret=s.sourcing_approval_client_secret,
+        api_key=s.sourcing_approval_api_key,
     )
 
 

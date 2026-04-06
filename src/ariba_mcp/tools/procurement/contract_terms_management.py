@@ -1,24 +1,3 @@
-"""Contract Terms Management API.,
-
-Owner: Shabreen
-Docs: https://help.sap.com/doc/3030e0a0f768498f91043a8abbc75ff1/cloud/en-US/index.html
-
-This API allows developers to create and manage contract terms and contract
-requests within SAP Ariba Contracts and SAP Ariba strategic sourcing solutions.
-
-Endpoints implemented:
-  GET  /contractWorkspaces/{contractId}/contractTerms  - retrieve contract terms for a workspace
-  POST /contractWorkspaces/{contractId}/contractTerms  - create contract terms in a workspace
-  GET  /contractRequests                               - retrieve contract requests (list)
-  POST /contractRequests                               - create a new contract request
-
-Prerequisites:
-  - SAP Ariba Developer Portal access
-  - SAP Ariba Contracts or strategic sourcing solution enabled
-  - Contract workspace must exist before creating contract terms
-  - OAuth authentication configured
-"""
-
 import json
 
 from fastmcp import FastMCP
@@ -26,8 +5,6 @@ from fastmcp import FastMCP
 from ariba_mcp.client import AribaClient
 from ariba_mcp.errors import handle_ariba_error
 
-# TODO: Confirm exact API path slug from the Developer Portal
-# "Environment Details" table on the discovery page for this API.
 CONTRACT_TERMS_API = "contract-terms-management/v1/prod"
 
 
@@ -47,13 +24,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         top: int | None = None,
         skip: int | None = None,
     ) -> str:
-        """
-        Args:
-            realm:       Required. The target SAP Ariba realm (e.g. 'MyCompanyS4').
-            contract_id: Required. The contract workspace ID to retrieve terms for.
-            top:         Optional. Max records to return (default 10).
-            skip:        Optional. Number of records to skip for pagination.
-        """
         try:
             params: dict = {"realm": realm}
             if top is not None:
@@ -83,14 +53,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         contract_id: str,
         body: dict,
     ) -> str:
-        """
-        Args:
-            realm:       Required. The target SAP Ariba realm.
-            contract_id: Required. The contract workspace ID to create terms in.
-            body:        Required. JSON payload with contract terms details.
-                         On success, response contains contractTermsDocumentId
-                         and contractRequestId.
-        """
         try:
             result = await client.post_resource(
                 CONTRACT_TERMS_API,
@@ -116,14 +78,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         top: int | None = None,
         skip: int | None = None,
     ) -> str:
-        """
-        Args:
-            realm:  Required. The target SAP Ariba realm.
-            filter: Optional. OData $filter expression,
-                    e.g. "status eq 'Approved'" or "requestId eq 'CR-1234'".
-            top:    Optional. Max records to return (default 10).
-            skip:   Optional. Number of records to skip for pagination.
-        """
         try:
             params: dict = {"realm": realm}
             if filter:
@@ -151,12 +105,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         realm: str,
         body: dict,
     ) -> str:
-        """
-        Args:
-            realm: Required. The target SAP Ariba realm.
-            body:  Required. JSON payload with contract request header details.
-                   On success, response contains the new contractRequestId.
-        """
         try:
             result = await client.post_resource(
                 CONTRACT_TERMS_API,
@@ -166,4 +114,4 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             )
             return json.dumps(result, default=str)
         except Exception as e:
-            return handle_ariba_error(e)			
+            return handle_ariba_error(e)

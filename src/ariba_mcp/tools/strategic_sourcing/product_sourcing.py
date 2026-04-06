@@ -1,32 +1,22 @@
-"""Pricing API for Product Sourcing.
-
-Owner: Pranathi
-Prod URL: https://openapi.ariba.com/api/pricing/v1/prod
-
-Fetch pricing details for items in Ariba based on supplier, item,
-or contract context.
-
-Authentication: OAuth 2.0 Bearer token + apiKey header (Pranathi credentials)
-"""
-
 import json
-import os
 
 import httpx
 from fastmcp import FastMCP
 
 from ariba_mcp.auth import DirectAuthClient
 from ariba_mcp.client import AribaClient
+from ariba_mcp.config import get_settings
 from ariba_mcp.errors import handle_ariba_error
 
 BASE_URL = "https://openapi.ariba.com/api/pricing/v1/prod"
 
 
 def _make_auth() -> DirectAuthClient:
+    s = get_settings()
     return DirectAuthClient(
-        client_id=os.getenv("PRANATHI_CLIENT_ID", ""),
-        client_secret=os.getenv("PRANATHI_CLIENT_SECRET", ""),
-        api_key=os.getenv("PRANATHI_API_KEY", ""),
+        client_id=s.pranathi_client_id,
+        client_secret=s.pranathi_client_secret,
+        api_key=s.pranathi_api_key,
     )
 
 

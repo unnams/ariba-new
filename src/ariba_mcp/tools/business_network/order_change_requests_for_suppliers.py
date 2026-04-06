@@ -1,25 +1,3 @@
-"""Order Change Requests API for Suppliers.,
-
-Owner: Shabreen
-Docs: https://help.sap.com/doc/a18df06872cc41dab5617273313a23d4/cloud/en-US/index.html
-
-This API is for SAP Business Network suppliers with SAP Business Network for
-Supply Chain enablement who want to extract change request information.
-
-Endpoints implemented:
-  GET  /changeRequests             – retrieve change requests received by the supplier
-  GET  /changeRequestResponses     – retrieve responses sent by the supplier
-  GET  /changeRequestConfirmations – retrieve confirmations sent to the supplier
-  POST /changeRequests             – send change request information to the supplier
-  POST /changeRequestConfirmations – send change request confirmation information
-
-Prerequisites:
-  - SAP Ariba Developer Portal access
-  - SAP Business Network for Supply Chain enablement
-  - OAuth authentication configured (handled by AribaClient)
-  - API Management enabled in Seller account settings
-"""
-
 import json
 
 from fastmcp import FastMCP
@@ -27,7 +5,6 @@ from fastmcp import FastMCP
 from ariba_mcp.client import AribaClient
 from ariba_mcp.errors import handle_ariba_error
 
-# TODO: Confirm exact API path slug from the Developer Portal
 ORDER_CHANGE_REQUESTS_SUPPLIER_API = "order-change-requests-supplier/v1/prod"
 
 
@@ -47,15 +24,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         filter: str | None = None,
         page_token: str | None = None,
     ) -> str:
-        """
-        Args:
-            anid:       Required. The supplier's Ariba Network ID (ANID).
-            filter:     Optional. OData $filter expression. Supported fields:
-                          createdDateFrom, createdDateTo, purchaseOrderId,
-                          purchaseOrderLineNumber, purchaseOrderScheduleLineNumber,
-                          buyerPlantCode, buyerItemId, supplierOrgId
-            page_token: Optional. Pagination token from a previous response.
-        """
         try:
             params: dict = {"anid": anid}
             if filter:
@@ -83,12 +51,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         filter: str | None = None,
         page_token: str | None = None,
     ) -> str:
-        """
-        Args:
-            anid:       Required. The supplier's Ariba Network ID (ANID).
-            filter:     Optional. OData $filter expression to narrow results.
-            page_token: Optional. Pagination token from a previous response.
-        """
         try:
             params: dict = {"anid": anid}
             if filter:
@@ -116,12 +78,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         filter: str | None = None,
         page_token: str | None = None,
     ) -> str:
-        """
-        Args:
-            anid:       Required. The supplier's Ariba Network ID (ANID).
-            filter:     Optional. OData $filter expression to narrow results.
-            page_token: Optional. Pagination token from a previous response.
-        """
         try:
             params: dict = {"anid": anid}
             if filter:
@@ -135,8 +91,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
 
-    # ── POST tools ────────────────────────────────────────────────────────────
-
     @mcp.tool(
         name="ariba_supplier_change_request_create",
         description=(
@@ -149,12 +103,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         anid: str,
         body: dict,
     ) -> str:
-        """
-        Args:
-            anid: Required. The supplier's Ariba Network ID (ANID).
-            body: Required. JSON payload containing the change request details
-                  (purchaseOrderId, lineItems, requested changes, etc.).
-        """
         try:
             result = await client.post_resource(
                 ORDER_CHANGE_REQUESTS_SUPPLIER_API,
@@ -178,12 +126,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         anid: str,
         body: dict,
     ) -> str:
-        """
-        Args:
-            anid: Required. The supplier's Ariba Network ID (ANID).
-            body: Required. JSON payload containing the confirmation details
-                  (changeRequestId, confirmationStatus, line items, etc.).
-        """
         try:
             result = await client.post_resource(
                 ORDER_CHANGE_REQUESTS_SUPPLIER_API,

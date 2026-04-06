@@ -1,22 +1,11 @@
-"""Sourcing Project Management API.
-
-Owner: Pranathi
-Prod URL: https://openapi.ariba.com/api/sourcing-project-management/v2/prod
-
-List, get, and create sourcing projects (RFQs, RFPs, events).
-
-Authentication: OAuth 2.0 Bearer token + apiKey header (Pranathi credentials)
-Note: This API also requires user + passwordAdapter query params for user context.
-"""
-
 import json
-import os
 
 import httpx
 from fastmcp import FastMCP
 
 from ariba_mcp.auth import DirectAuthClient
 from ariba_mcp.client import AribaClient
+from ariba_mcp.config import get_settings
 from ariba_mcp.errors import handle_ariba_error
 
 BASE_URL = "https://openapi.ariba.com/api/sourcing-project-management/v2/prod"
@@ -24,9 +13,9 @@ BASE_URL = "https://openapi.ariba.com/api/sourcing-project-management/v2/prod"
 
 def _make_auth() -> DirectAuthClient:
     return DirectAuthClient(
-        client_id=os.getenv("PRANATHI_CLIENT_ID", ""),
-        client_secret=os.getenv("PRANATHI_CLIENT_SECRET", ""),
-        api_key=os.getenv("PRANATHI_API_KEY", ""),
+        client_id=get_settings().pranathi_client_id,
+        client_secret=get_settings().pranathi_client_secret,
+        api_key=get_settings().pranathi_api_key,
     )
 
 

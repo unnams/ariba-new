@@ -1,23 +1,3 @@
-"""Internal Catalogs Shop API.
-
-Owner: Anil
-Prod URL: https://openapi.ariba.com/api/ariba-catalog-provider/v1/prod
-Docs: https://help.sap.com/doc/9d210ac7774a48c7a50e064db3c932e9/cloud/en-US/index.html
-
-Key endpoints:
-  GET /Shops({shopID})            — Retrieve all items and facets from catalogs in a shop.
-  GET /Shops({shopID})/Items      — Return all items and their details from catalogs in a shop.
-  GET /Shops({shopID})/AutoComplete — Typeahead search: retrieve matching search suggestions.
-
-Prerequisites:
-  - Access to SAP Ariba Developer Portal to create an application and request API access.
-  - All queries must be authenticated using OAuth authentication.
-  - Search 3.0 must be enabled for your site via a Designated Support Contact case.
-
-Authentication: OAuth 2.0 Bearer token + apiKey header
-Response format: JSON
-"""
-
 import json
 
 from fastmcp import FastMCP
@@ -30,7 +10,6 @@ BASE_URL = "https://openapi.ariba.com/api/ariba-catalog-provider/v1/prod"
 
 
 def _resolve_shop_id(shop_id: str | None) -> str | None:
-    """Return the provided shop_id (no fallback — shop_id is required)."""
     return shop_id
 
 
@@ -42,7 +21,6 @@ MISSING_SHOP_ID_MSG = (
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
-    """Register Internal Catalogs Shop API tools."""
 
     @mcp.tool(
         name="ariba_catalog_internal_get_shop",
@@ -117,4 +95,4 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             result = await client.get(url, params=params)
             return json.dumps(result, default=str)
         except Exception as e:
-            return handle_ariba_error(e)#internal
+            return handle_ariba_error(e)

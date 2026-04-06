@@ -1,37 +1,35 @@
-"""Supplier Data API with Pagination.
-
-Owner: Nitish SM
-Prod URL: https://openapi.ariba.com/api/supplierdatapagination/v4/prod
-Docs: https://help.sap.com/doc/60ec8b8bb9344dbe8dcf15e2a1edc85b/cloud/en-US/index.html
-
-Key endpoint:
-  POST /vendorDataRequests — Returns all vendor/supplier data as CSV
-  Accepts optional JSON body to filter by vendor IDs, fields, etc.
-
-Authentication: OAuth 2.0 Bearer token + apiKey header
-Response format: CSV (parsed to JSON by this tool)
-"""
-
 import csv
 import io
 import json
 
+import httpx
 from fastmcp import FastMCP
 
+from ariba_mcp.auth import DirectAuthClient
 from ariba_mcp.client import AribaClient
+from ariba_mcp.config import get_settings
 from ariba_mcp.errors import handle_ariba_error
 
 API_PATH = "supplierdatapagination/v4/prod"
 
 
+def _make_sdp_auth() -> DirectAuthClient:
+    s = get_settings()
+    return DirectAuthClient(
+        client_id=s.ariba_sdp_client_id,
+        client_secret=s.ariba_sdp_client_secret,
+        api_key=s.ariba_sdp_api_key,
+    )
+
+
 def _csv_to_json(csv_text: str) -> list[dict]:
-    """Parse CSV response into a list of dicts."""
     reader = csv.DictReader(io.StringIO(csv_text))
     return [row for row in reader]
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
-    """Register Supplier Data API with Pagination tools."""
+
+    _sdp_auth = _make_sdp_auth()
 
     @mcp.tool(
         name="ariba_supplier_list_all",
@@ -48,10 +46,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     async def list_all_suppliers(page: int | None = None, page_size: int = 50) -> str:
         try:
             url = f"{client.base_url}/{API_PATH}/vendorDataRequests"
-            headers = await client.auth.get_headers()
+            headers = await _sdp_auth.get_headers()
             headers["Content-Type"] = "application/json"
-            import httpx
-
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     url,
@@ -72,7 +68,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     "page": page,
                     "page_size": page_size,
                     "total_count": len(rows),
-                    "total_pages": -(-len(rows) // page_size),  # ceiling division
+                    "total_pages": -(-len(rows) // page_size),
                     "returned_count": len(page_rows),
                     "suppliers": page_rows,
                 }
@@ -98,10 +94,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         try:
             ids = [v.strip() for v in vendor_ids.split(",")]
             url = f"{client.base_url}/{API_PATH}/vendorDataRequests"
-            headers = await client.auth.get_headers()
+            headers = await _sdp_auth.get_headers()
             headers["Content-Type"] = "application/json"
-            import httpx
-
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     url,
@@ -132,10 +126,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     async def search_suppliers(name: str) -> str:
         try:
             url = f"{client.base_url}/{API_PATH}/vendorDataRequests"
-            headers = await client.auth.get_headers()
+            headers = await _sdp_auth.get_headers()
             headers["Content-Type"] = "application/json"
-            import httpx
-
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     url,
@@ -173,10 +165,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     ) -> str:
         try:
             url = f"{client.base_url}/{API_PATH}/vendorDataRequests"
-            headers = await client.auth.get_headers()
+            headers = await _sdp_auth.get_headers()
             headers["Content-Type"] = "application/json"
-            import httpx
-
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     url,
@@ -213,10 +203,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     async def supplier_summary() -> str:
         try:
             url = f"{client.base_url}/{API_PATH}/vendorDataRequests"
-            headers = await client.auth.get_headers()
+            headers = await _sdp_auth.get_headers()
             headers["Content-Type"] = "application/json"
-            import httpx
-
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     url,
@@ -229,7 +217,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
 
             rows = _csv_to_json(resp.text)
 
-            # Deduplicate by SM Vendor ID
             unique = {}
             for r in rows:
                 vid = r.get("SM Vendor ID", "")
