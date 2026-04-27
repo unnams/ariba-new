@@ -206,31 +206,3 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
-
-    @mcp.tool(
-        name="ariba_create_sourcing_project",
-        description=(
-            "Create a new sourcing project in Ariba. "
-            "Pass project_data as a JSON string (title, projectType, description, owner, etc.)."
-        ),
-        annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
-    )
-    async def create_sourcing_project(
-        project_data: str,
-        user: str | None = None,
-        password_adapter: str | None = None,
-    ) -> str:
-        try:
-            payload = json.loads(project_data)
-            headers = await _auth.get_headers()
-            headers["Content-Type"] = "application/json"
-            params = _user_params(client.realm, user, password_adapter)
-            async with httpx.AsyncClient() as http:
-                resp = await http.post(
-                    f"{BASE_URL}/projects",
-                    headers=headers, params=params, json=payload, timeout=60,
-                )
-                resp.raise_for_status()
-            return json.dumps(resp.json(), default=str)
-        except Exception as e:
-            return handle_ariba_error(e)

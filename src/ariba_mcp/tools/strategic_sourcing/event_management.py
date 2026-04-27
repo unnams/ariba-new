@@ -91,22 +91,44 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     @mcp.tool(
         name="ariba_event_create",
         description=(
-            "Create a new sourcing event (RFx/Auction). "
-            "event_data is a JSON string with the event configuration "
-            "(title, type, owner, items, etc.) per Ariba schema."
+            "Create a new sourcing event (RFx/RFP/Auction) in Ariba. "
+            "Required: title, owner_email, template_id (the source RFx template, e.g. 'Doc5613355011'), "
+            "parent_project_id (the parent project workspace, e.g. 'WS5653890756'). "
+            "Optional: description, owner_name, is_test (defaults true), and extra_fields "
+            "(JSON string of additional schema fields to merge into the payload)."
         ),
         annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
     )
     async def create_event(
-        event_data: str,
+        title: str,
+        owner_email: str,
+        template_id: str,
+        parent_project_id: str,
+        description: str = "",
+        owner_name: str | None = None,
+        is_test: bool = True,
+        extra_fields: str | None = None,
         user: str | None = None,
         password_adapter: str | None = None,
     ) -> str:
         try:
-            payload = json.loads(event_data)
+            params = _user_params(client.realm, user, password_adapter)
+            payload = {
+                "title": title,
+                "description": description,
+                "owner": {
+                    "uniqueName": owner_email,
+                    "passwordAdapter": params["passwordAdapter"],
+                    "name": owner_name or owner_email,
+                },
+                "templateDocumentInternalId": template_id,
+                "parentProjectId": parent_project_id,
+                "isTest": is_test,
+            }
+            if extra_fields:
+                payload.update(json.loads(extra_fields))
             headers = await _auth.get_headers()
             headers["Content-Type"] = "application/json"
-            params = _user_params(client.realm, user, password_adapter)
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     f"{BASE_URL}/events",
