@@ -1,13 +1,9 @@
-"""Configuration for SAP Ariba MCP Server.
-
-Reads credentials and settings from environment variables or a .env file.
-Credentials are shared across the team — one person provisions them on the
-SAP Ariba Developer Portal and distributes the .env file.
-"""
-
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings
+
+_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
 
 class AribaSettings(BaseSettings):
@@ -82,6 +78,13 @@ class AribaSettings(BaseSettings):
     pranathi_client_id: str = ""
     pranathi_client_secret: str = ""
     pranathi_api_key: str = ""
+
+    # Sourcing Project Management API credentials
+    sourcing_pm_client_id: str = ""
+    sourcing_pm_client_secret: str = ""
+    sourcing_pm_api_key: str = ""
+    sourcing_pm_user: str = ""
+    sourcing_pm_password_adapter: str = "PasswordAdapter1"
 
     # Invoice API credentials
     invoice_ariba_client_id: str = ""
@@ -195,7 +198,7 @@ class AribaSettings(BaseSettings):
     default_page_size: int = 50
     max_page_size: int = 10000  # Ariba APIs support up to 10k per page for async
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
+    model_config = {"env_file": str(_ENV_FILE), "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
 @lru_cache

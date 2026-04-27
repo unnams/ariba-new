@@ -12,11 +12,21 @@ BASE_URL = "https://openapi.ariba.com/api/sourcing-project-management/v2/prod"
 
 
 def _make_auth() -> DirectAuthClient:
+    s = get_settings()
     return DirectAuthClient(
-        client_id=get_settings().pranathi_client_id,
-        client_secret=get_settings().pranathi_client_secret,
-        api_key=get_settings().pranathi_api_key,
+        client_id=s.sourcing_pm_client_id,
+        client_secret=s.sourcing_pm_client_secret,
+        api_key=s.sourcing_pm_api_key,
     )
+
+
+def _user_params(realm: str, user: str | None, password_adapter: str | None) -> dict:
+    s = get_settings()
+    return {
+        "realm": realm,
+        "user": user or s.sourcing_pm_user,
+        "passwordAdapter": password_adapter or s.sourcing_pm_password_adapter,
+    }
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
@@ -27,36 +37,26 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         name="ariba_list_sourcing_projects",
         description=(
             "List sourcing projects from Ariba (RFQs, RFPs, events). "
-            "Requires user and password_adapter for user-context auth. "
-            "Also requires a filter_expr (OData $filter) — e.g. "
-            "\"status eq 'Open'\" or \"projectType eq 'RFQ'\". "
-            "Returns project IDs, titles, statuses, and owners."
+            "filter_expr is OData syntax — e.g. "
+            "\"(createDateFrom gt 1704067200000 and createDateTo lt 1767225600000)\". "
+            "user and password_adapter are optional and default to .env values."
         ),
         annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     )
     async def list_sourcing_projects(
-        user: str,
-        password_adapter: str,
         filter_expr: str,
+        user: str | None = None,
+        password_adapter: str | None = None,
         page_token: str | None = None,
     ) -> str:
         try:
             headers = await _auth.get_headers()
-            params: dict = {
-                "realm": client.realm,
-                "user": user,
-                "passwordAdapter": password_adapter,
-                "$filter": filter_expr,
-            }
+            params = _user_params(client.realm, user, password_adapter)
+            params["$filter"] = filter_expr
             if page_token:
                 params["pageToken"] = page_token
             async with httpx.AsyncClient() as http:
-                resp = await http.get(
-                    f"{BASE_URL}/projects",
-                    headers=headers,
-                    params=params,
-                    timeout=60,
-                )
+                resp = await http.get(f"{BASE_URL}/projects", headers=headers, params=params, timeout=60)
                 resp.raise_for_status()
             return json.dumps(resp.json(), default=str)
         except Exception as e:
@@ -65,29 +65,142 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     @mcp.tool(
         name="ariba_get_sourcing_project",
         description=(
-            "Get details of a specific sourcing project by project ID. "
-            "Requires user and password_adapter for user-context auth. "
+            "Get details of a specific sourcing project by project ID (e.g. 'WS5396278319'). "
             "Returns full project details including events, participants, and timeline."
         ),
         annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     )
     async def get_sourcing_project(
         project_id: str,
-        user: str,
-        password_adapter: str,
+        user: str | None = None,
+        password_adapter: str | None = None,
     ) -> str:
         try:
             headers = await _auth.get_headers()
+            params = _user_params(client.realm, user, password_adapter)
             async with httpx.AsyncClient() as http:
                 resp = await http.get(
                     f"{BASE_URL}/projects/{project_id}",
-                    headers=headers,
-                    params={
-                        "realm": client.realm,
-                        "user": user,
-                        "passwordAdapter": password_adapter,
-                    },
-                    timeout=60,
+                    headers=headers, params=params, timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
+
+    @mcp.tool(
+        name="ariba_get_sourcing_project_documents",
+        description=(
+            "Retrieve documents linked to a sourcing project (RFx, contracts, attachments). "
+            "filter_expr is OData syntax — e.g. "
+            "\"(createDateFrom gt 1704067200000 and createDateTo lt 1767225600000)\"."
+        ),
+        annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    )
+    async def get_sourcing_project_documents(
+        project_id: str,
+        filter_expr: str | None = None,
+        user: str | None = None,
+        password_adapter: str | None = None,
+    ) -> str:
+        try:
+            headers = await _auth.get_headers()
+            params = _user_params(client.realm, user, password_adapter)
+            if filter_expr:
+                params["$filter"] = filter_expr
+            async with httpx.AsyncClient() as http:
+                resp = await http.get(
+                    f"{BASE_URL}/projects/{project_id}/documents",
+                    headers=headers, params=params, timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
+
+    @mcp.tool(
+        name="ariba_get_sourcing_project_team",
+        description=(
+            "Retrieve team / project group members of a sourcing project. "
+            "team_id is the project group ID (e.g. 'PG5396278322'). "
+            "filter_expr is optional OData syntax."
+        ),
+        annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    )
+    async def get_sourcing_project_team(
+        project_id: str,
+        team_id: str,
+        filter_expr: str | None = None,
+        user: str | None = None,
+        password_adapter: str | None = None,
+    ) -> str:
+        try:
+            headers = await _auth.get_headers()
+            params = _user_params(client.realm, user, password_adapter)
+            if filter_expr:
+                params["$filter"] = filter_expr
+            async with httpx.AsyncClient() as http:
+                resp = await http.get(
+                    f"{BASE_URL}/projects/{project_id}/teams/{team_id}",
+                    headers=headers, params=params, timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
+
+    @mcp.tool(
+        name="ariba_get_sourcing_project_history",
+        description=(
+            "Retrieve history records (audit trail) for a sourcing project — "
+            "state changes, approvals, edits, and other lifecycle events."
+        ),
+        annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    )
+    async def get_sourcing_project_history(
+        project_id: str,
+        filter_expr: str | None = None,
+        user: str | None = None,
+        password_adapter: str | None = None,
+    ) -> str:
+        try:
+            headers = await _auth.get_headers()
+            params = _user_params(client.realm, user, password_adapter)
+            if filter_expr:
+                params["$filter"] = filter_expr
+            async with httpx.AsyncClient() as http:
+                resp = await http.get(
+                    f"{BASE_URL}/projects/{project_id}/historyRecords",
+                    headers=headers, params=params, timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
+
+    @mcp.tool(
+        name="ariba_get_sourcing_project_tasks",
+        description=(
+            "Retrieve tasks of a sourcing project (approvals, to-dos, milestones). "
+            "filter_expr is optional OData syntax."
+        ),
+        annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    )
+    async def get_sourcing_project_tasks(
+        project_id: str,
+        filter_expr: str | None = None,
+        user: str | None = None,
+        password_adapter: str | None = None,
+    ) -> str:
+        try:
+            headers = await _auth.get_headers()
+            params = _user_params(client.realm, user, password_adapter)
+            if filter_expr:
+                params["$filter"] = filter_expr
+            async with httpx.AsyncClient() as http:
+                resp = await http.get(
+                    f"{BASE_URL}/projects/{project_id}/tasks",
+                    headers=headers, params=params, timeout=60,
                 )
                 resp.raise_for_status()
             return json.dumps(resp.json(), default=str)
@@ -98,32 +211,24 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         name="ariba_create_sourcing_project",
         description=(
             "Create a new sourcing project in Ariba. "
-            "Requires user and password_adapter for user-context auth. "
-            "Pass project_data as a JSON string with project details "
-            "(title, projectType, description, owner, etc.)."
+            "Pass project_data as a JSON string (title, projectType, description, owner, etc.)."
         ),
         annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
     )
     async def create_sourcing_project(
         project_data: str,
-        user: str,
-        password_adapter: str,
+        user: str | None = None,
+        password_adapter: str | None = None,
     ) -> str:
         try:
             payload = json.loads(project_data)
             headers = await _auth.get_headers()
             headers["Content-Type"] = "application/json"
+            params = _user_params(client.realm, user, password_adapter)
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     f"{BASE_URL}/projects",
-                    headers=headers,
-                    params={
-                        "realm": client.realm,
-                        "user": user,
-                        "passwordAdapter": password_adapter,
-                    },
-                    json=payload,
-                    timeout=60,
+                    headers=headers, params=params, json=payload, timeout=60,
                 )
                 resp.raise_for_status()
             return json.dumps(resp.json(), default=str)
