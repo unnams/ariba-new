@@ -86,6 +86,21 @@ class AribaSettings(BaseSettings):
     sourcing_pm_user: str = ""
     sourcing_pm_password_adapter: str = "PasswordAdapter1"
 
+    # Master Data Retrieval (MDS) API credentials
+    mds_client_id: str = ""
+    mds_client_secret: str = ""
+    mds_api_key: str = ""
+
+    # Product Pricing API credentials
+    pricing_client_id: str = ""
+    pricing_client_secret: str = ""
+    pricing_api_key: str = ""
+
+    # Event Management API credentials
+    event_mgmt_client_id: str = ""
+    event_mgmt_client_secret: str = ""
+    event_mgmt_api_key: str = ""
+
     # Invoice API credentials
     invoice_ariba_client_id: str = ""
     invoice_ariba_client_secret: str = ""

@@ -14,9 +14,9 @@ BASE_URL = "https://openapi.ariba.com/api/pricing/v1/prod"
 def _make_auth() -> DirectAuthClient:
     s = get_settings()
     return DirectAuthClient(
-        client_id=s.pranathi_client_id,
-        client_secret=s.pranathi_client_secret,
-        api_key=s.pranathi_api_key,
+        client_id=s.pricing_client_id,
+        client_secret=s.pricing_client_secret,
+        api_key=s.pricing_api_key,
     )
 
 
@@ -25,39 +25,30 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     _auth = _make_auth()
 
     @mcp.tool(
-        name="ariba_get_pricing_details",
+        name="ariba_get_pricing_changes",
         description=(
-            "Retrieve pricing details for items in Ariba. "
-            "Used to fetch price based on supplier, item, or contract context. "
-            "Pass filters as a JSON string, e.g. '{\"itemId\":\"123\",\"supplier\":\"ABC\"}'."
+            "Get pricing data changes for a one-day/time window from Ariba Product Sourcing. "
+            "from_date and to_date format: ISO 8601 with offset, e.g. '2024-01-01T00:00:00+05:30'. "
+            "If unspecified, defaults to a 24h window ending now (UTC)."
         ),
-        annotations={
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": True,
-        },
+        annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     )
-    async def get_pricing_details(
-        filters: str | None = None,
-        page_token: str | None = None,
+    async def get_pricing_changes(
+        from_date: str,
+        to_date: str,
+        top: int = 50,
+        skip: int = 0,
     ) -> str:
         try:
             headers = await _auth.get_headers()
-            params: dict = {"realm": client.realm}
-            if filters:
-                filter_dict = json.loads(filters)
-                params["filters"] = json.dumps(filter_dict)
-            if page_token:
-                params["pageToken"] = page_token
-
+            params = {
+                "realm": client.realm,
+                "$filter": f"fromdate eq '{from_date}' and todate eq '{to_date}'",
+                "$top": top,
+                "$skip": skip,
+            }
             async with httpx.AsyncClient() as http:
-                resp = await http.get(
-                    f"{BASE_URL}/pricingDetails",
-                    headers=headers,
-                    params=params,
-                    timeout=60,
-                )
+                resp = await http.get(f"{BASE_URL}/objects", headers=headers, params=params, timeout=60)
                 resp.raise_for_status()
             return json.dumps(resp.json(), default=str)
         except Exception as e:

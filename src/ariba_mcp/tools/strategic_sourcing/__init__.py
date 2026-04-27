@@ -7,6 +7,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     from ariba_mcp.tools.strategic_sourcing import (
         configuration_parameter_review,
         cost_breakdown_data_extraction,
+        event_management,
         external_approval_API,
         master_data,
         product_hierarchy_management,
@@ -23,3 +24,4 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     configuration_parameter_review.register(mcp, client)
     sourcing_project_mangement.register(mcp, client)
     external_approval_API.register(mcp, client)
+    event_management.register(mcp, client)
