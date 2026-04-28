@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: ariba-mcp
+    runtime: python
+    plan: free
+    buildCommand: pip install -e .
+    startCommand: python -m ariba_mcp.server
+    envVars:
+      - key: MCP_TRANSPORT
+        value: streamable-http
+      - key: PYTHON_VERSION
+        value: 3.11.15

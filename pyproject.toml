@@ -2,7 +2,7 @@
 name = "ariba-mcp"
 version = "0.1.0"
 description = "MCP server for SAP Ariba procurement suite — exposes Purchase Orders, Invoices, Requisitions, Contracts, Suppliers, Receipts, Payments, Sourcing, Catalogs, and Approvals as Claude-compatible tools."
-requires-python = ">=3.11"
+requires-python = ">=3.11,<4.0"
 license = { text = "MIT" }
 authors = [
     { name = "Ariba MCP Team" },
