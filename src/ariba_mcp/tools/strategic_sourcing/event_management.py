@@ -1,3 +1,4 @@
+import base64
 import json
 
 import httpx
@@ -63,7 +64,18 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         name="ariba_event_add_items",
         description=(
             "Add items to an existing sourcing event. "
-            "items_data is a JSON string representing the items array per Ariba schema."
+            "items_data is a JSON string representing the items array per Ariba schema. "
+            "itemType values: 2=Section, 3=Question, 4=LineItem, 5=Lot. "
+            "To create a questionnaire that can accept a file upload, add a Section, then a "
+            "Question whose terms include an Attachment-typed term. Example payload:\n"
+            '{"items": ['
+            '{"itemType": 2, "title": "Technical Requirements", "parentItem": "ROOT"}, '
+            '{"itemType": 3, "title": "Please review the attached spec and confirm compliance", '
+            '"parentItem": "<sectionItemId from the section response>", '
+            '"terms": [{"fieldId": "RITAATTACHIFZ000001", "dataType": "Attachment"}]}'
+            "]}\n"
+            "After the question is created, upload the file with ariba_event_item_add_attachment "
+            "using the question's itemId and the term's fieldId."
         ),
         annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
     )
@@ -82,6 +94,53 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                 resp = await http.post(
                     f"{BASE_URL}/events/{event_id}/items",
                     headers=headers, params=params, json=payload, timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
+
+    @mcp.tool(
+        name="ariba_event_item_add_attachment",
+        description=(
+            "Upload a file as an attachment to a specific item (Question/LineItem) in a "
+            "Draft sourcing event. Use this after ariba_event_add_items has created an item "
+            "with an Attachment-typed term.\n"
+            "- file_content: the document body. For text/markdown, pass the raw string. "
+            "For binary files (PDF, DOCX), pass base64 and set is_base64=True.\n"
+            "- field_id: the term ID for the attachment slot, e.g. 'RITAATTACHIFZ000001' "
+            "(visible on the item's terms in ariba_event_list_items).\n"
+            "- file_name: filename Ariba will display, e.g. 'requirements.md'.\n"
+            "- content_type: MIME type, default text/plain. Use application/pdf, "
+            "text/markdown, etc. as appropriate.\n"
+            "Note: the event must be in Draft status; uploads to published events are rejected."
+        ),
+        annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
+    )
+    async def add_event_item_attachment(
+        event_id: str,
+        item_id: str,
+        field_id: str,
+        file_content: str,
+        file_name: str,
+        content_type: str = "text/plain",
+        is_base64: bool = False,
+        is_reference: bool = False,
+        user: str | None = None,
+        password_adapter: str | None = None,
+    ) -> str:
+        try:
+            raw = base64.b64decode(file_content) if is_base64 else file_content.encode("utf-8")
+            params = _user_params(client.realm, user, password_adapter)
+            params["fieldId"] = field_id
+            params["isReference"] = "true" if is_reference else "false"
+            headers = await _auth.get_headers()
+            async with httpx.AsyncClient() as http:
+                resp = await http.post(
+                    f"{BASE_URL}/events/{event_id}/items/{item_id}/attachments",
+                    headers=headers, params=params,
+                    files={"file": (file_name, raw, content_type)},
+                    timeout=60,
                 )
                 resp.raise_for_status()
             return json.dumps(resp.json(), default=str)
