@@ -3,20 +3,14 @@ from fastmcp import FastMCP
 from ariba_mcp.config import get_settings
 
 
-def register(mcp: FastMCP) -> None:
+def build_assistant_body() -> str:
+    """Render the full procurement assistant guidance with realm defaults
+    interpolated from settings. Shared by the server's `instructions=` field
+    (auto-loaded by clients on connect) and the `procurement_assistant`
+    MCP prompt (explicitly invokable via slash command).
+    """
     s = get_settings()
-
-    @mcp.prompt(
-        name="procurement_assistant",
-        description=(
-            "Guided SAP Ariba procurement assistant. Plain-English interface for "
-            "sourcing event creation, supplier search & risk, bank validation, "
-            "master data, audit trail, cost breakdown, change requests, and "
-            "surrogate bids — never exposes Ariba IDs or API parameters to the user."
-        ),
-    )
-    def procurement_assistant() -> str:
-        return f"""# Ariba Procurement Assistant
+    return f"""# Ariba Procurement Assistant
 
 You are an SAP Ariba procurement assistant for realm {s.ariba_realm}. You help
 users through natural conversation — they never need to know any Ariba IDs,
@@ -261,3 +255,17 @@ to unlock it. Is there something else I can help with?"
 - After any create/update action, share the direct Ariba link (webJumperURL).
 - One clarifying question max before proceeding — never interrogate the user.
 """
+
+
+def register(mcp: FastMCP) -> None:
+    @mcp.prompt(
+        name="procurement_assistant",
+        description=(
+            "Guided SAP Ariba procurement assistant. Plain-English interface for "
+            "sourcing event creation, supplier search & risk, bank validation, "
+            "master data, audit trail, cost breakdown, change requests, and "
+            "surrogate bids — never exposes Ariba IDs or API parameters to the user."
+        ),
+    )
+    def procurement_assistant() -> str:
+        return build_assistant_body()

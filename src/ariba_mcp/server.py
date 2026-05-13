@@ -9,6 +9,7 @@ from starlette.responses import FileResponse, Response
 from ariba_mcp.client import AribaClient
 from ariba_mcp.config import get_settings
 from ariba_mcp.prompts import register_all_prompts
+from ariba_mcp.prompts.procurement import build_assistant_body
 from ariba_mcp.tools import register_all_tools
 
 _client = AribaClient(get_settings())
@@ -18,13 +19,7 @@ _PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://ariba-mcp.onrender.com"
 
 mcp = FastMCP(
     "ariba-mcp",
-    instructions=(
-        "SAP Ariba Procurement MCP Server. "
-        "Use ariba_* tools to query procurement reporting, sourcing projects, "
-        "analytical data, supplier information, contract compliance, "
-        "document approvals, audit logs, and supplier risk from your SAP Ariba realm. "
-        "API docs: https://help.sap.com/docs/ariba-apis"
-    ),
+    instructions=build_assistant_body(),
     icons=[
         Icon(
             src=f"{_PUBLIC_BASE_URL}/logo.png",
