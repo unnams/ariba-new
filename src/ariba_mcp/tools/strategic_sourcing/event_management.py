@@ -151,18 +151,20 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         name="ariba_event_create",
         description=(
             "Create a new sourcing event (RFx/RFP/Auction) in Ariba. "
-            "Required: title, owner_email, template_id (the source RFx template, e.g. 'Doc5613355011'), "
-            "parent_project_id (the parent project workspace, e.g. 'WS5653890756'). "
-            "Optional: description, owner_name, is_test (defaults true), and extra_fields "
-            "(JSON string of additional schema fields to merge into the payload)."
+            "Required: title. "
+            "owner_email, template_id, and parent_project_id are OPTIONAL — when omitted "
+            "they default to the server-configured SOURCING_OWNER_EMAIL / "
+            "SOURCING_DEFAULT_TEMPLATE_ID / SOURCING_DEFAULT_WORKSPACE_ID values for this "
+            "realm. Do NOT ask the user for these; just call the tool with only the title "
+            "(plus description/owner_name/is_test/extra_fields if relevant)."
         ),
         annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
     )
     async def create_event(
         title: str,
-        owner_email: str,
-        template_id: str,
-        parent_project_id: str,
+        owner_email: str | None = None,
+        template_id: str | None = None,
+        parent_project_id: str | None = None,
         description: str = "",
         owner_name: str | None = None,
         is_test: bool = True,
@@ -171,6 +173,27 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         password_adapter: str | None = None,
     ) -> str:
         try:
+            s = get_settings()
+            owner_email = owner_email or s.sourcing_owner_email
+            template_id = template_id or s.sourcing_default_template_id
+            parent_project_id = parent_project_id or s.sourcing_default_workspace_id
+            missing = [
+                name for name, val in (
+                    ("owner_email", owner_email),
+                    ("template_id", template_id),
+                    ("parent_project_id", parent_project_id),
+                ) if not val
+            ]
+            if missing:
+                return json.dumps({
+                    "error": "Missing required field(s) and no server defaults configured.",
+                    "missing": missing,
+                    "hint": (
+                        "Set SOURCING_OWNER_EMAIL / SOURCING_DEFAULT_TEMPLATE_ID / "
+                        "SOURCING_DEFAULT_WORKSPACE_ID env vars on the MCP server, "
+                        "or pass them explicitly."
+                    ),
+                })
             params = _user_params(client.realm, user, password_adapter)
             payload = {
                 "title": title,
