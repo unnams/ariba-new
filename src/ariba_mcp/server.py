@@ -1,6 +1,7 @@
 import os
 
 from fastmcp import FastMCP
+from mcp.types import Icon
 
 from ariba_mcp.client import AribaClient
 from ariba_mcp.config import get_settings
@@ -18,6 +19,13 @@ mcp = FastMCP(
         "document approvals, audit logs, and supplier risk from your SAP Ariba realm. "
         "API docs: https://help.sap.com/docs/ariba-apis"
     ),
+    icons=[
+        Icon(
+            src="https://raw.githubusercontent.com/nitishsm2002/ariba-mcp/main/assets/logo.png",
+            mimeType="image/png",
+            sizes=["1024x1024"],
+        ),
+    ],
 )
 
 register_all_tools(mcp, _client)
