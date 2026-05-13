@@ -7,9 +7,9 @@ slash commands and orchestrate the underlying ariba_* tools.
 
 from fastmcp import FastMCP
 
-from ariba_mcp.prompts import sourcing
+from ariba_mcp.prompts import procurement
 
-_MODULES = [sourcing]
+_MODULES = [procurement]
 
 
 def register_all_prompts(mcp: FastMCP) -> None:
