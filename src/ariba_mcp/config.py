@@ -159,6 +159,13 @@ class AribaSettings(BaseSettings):
     # Strategic Sourcing Event Status API URL (Pranathi)
     ariba_event_status_api: str = "https://openapi.ariba.com/api/strategicsourcing-eventstatus/v2/prod"
 
+    # Sourcing Assistant defaults (used by the sourcing_assistant MCP prompt)
+    sourcing_default_template_id: str = ""
+    sourcing_default_workspace_id: str = ""
+    sourcing_fallback_workspace_id: str = ""
+    sourcing_owner_email: str = ""
+    sourcing_realm_display: str = ""
+
     # Optional per-API credentials (use when an API has its own application key)
     product_hierarchy_management_client_id: str | None = None
     product_hierarchy_management_client_secret: str | None = None

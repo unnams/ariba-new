@@ -4,6 +4,7 @@ from fastmcp import FastMCP
 
 from ariba_mcp.client import AribaClient
 from ariba_mcp.config import get_settings
+from ariba_mcp.prompts import register_all_prompts
 from ariba_mcp.tools import register_all_tools
 
 _client = AribaClient(get_settings())
@@ -20,6 +21,7 @@ mcp = FastMCP(
 )
 
 register_all_tools(mcp, _client)
+register_all_prompts(mcp)
 
 if __name__ == "__main__":
     transport = os.getenv("MCP_TRANSPORT", "stdio")
