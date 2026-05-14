@@ -6,6 +6,12 @@ from mcp.types import Icon
 from starlette.requests import Request
 from starlette.responses import FileResponse, Response
 
+from starlette.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+
+
 from ariba_mcp.client import AribaClient
 from ariba_mcp.config import get_settings
 from ariba_mcp.prompts import register_all_prompts
@@ -40,11 +46,7 @@ async def serve_logo(_: Request) -> Response:
 register_all_tools(mcp, _client)
 register_all_prompts(mcp)
 
+
+
 if __name__ == "__main__":
-    transport = os.getenv("MCP_TRANSPORT", "stdio")
-    if transport in ("http", "sse", "streamable-http"):
-        host = os.getenv("HOST", "0.0.0.0")
-        port = int(os.getenv("PORT", "8000"))
-        mcp.run(transport=transport, host=host, port=port)
-    else:
-        mcp.run()
+    mcp.run()

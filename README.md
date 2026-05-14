@@ -174,6 +174,37 @@ python -m ariba_mcp.server
 npx @modelcontextprotocol/inspector python -m ariba_mcp.server
 ```
 
+## Deploy to SAP BTP Cloud Foundry
+
+This repository includes `manifest.yml`, `requirements.txt`, and `runtime.txt` for SAP BTP Cloud Foundry deployment with the Python buildpack.
+
+Log in to your BTP Cloud Foundry org and space:
+
+```bash
+cf login -a https://api.cf.<region>.hana.ondemand.com
+```
+
+Create the app without starting it yet, then set the required SAP Ariba credentials as application environment variables. Do not put secrets in `manifest.yml`.
+
+```bash
+cf push --no-start
+```
+
+```bash
+cf set-env ariba_mcp_connector ARIBA_REALM "<your-realm>"
+cf set-env ariba_mcp_connector ARIBA_CLIENT_ID "<your-client-id>"
+cf set-env ariba_mcp_connector ARIBA_CLIENT_SECRET "<your-client-secret>"
+cf set-env ariba_mcp_connector ARIBA_API_KEY "<your-api-key>"
+```
+
+Start the app:
+
+```bash
+cf start ariba_mcp_connector
+```
+
+The app runs as a web process using FastMCP streamable HTTP transport. The BTP-provided `PORT` is read automatically by `src/ariba_mcp/server.py`.
+
 ### Connect to Claude Desktop
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
