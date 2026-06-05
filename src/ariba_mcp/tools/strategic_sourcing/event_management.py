@@ -161,7 +161,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
     )
     async def create_event(
-        title: str,   
+        title: str,
         owner_email: str | None = None,
         template_id: str | None = None,
         parent_project_id: str | None = None,
@@ -195,6 +195,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     ),
                 })
             params = _user_params(client.realm, user, password_adapter)
+            params["inheritTerms"] = "true" 
+            params["removeEmptyOwnerTerms"] = "true"
             payload = {
                 "title": title,
                 "description": description,
@@ -331,3 +333,32 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
+        @mcp.tool(
+        name="ariba_event_validate_publish",
+        description=(
+            "Validate whether a sourcing event can be published. "
+            "Use this before ariba_event_publish. If validation reports Quantity missing, "
+            "do not recommend Ariba UI; use API-only repair or template change."
+        ),
+        annotations={"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    )
+    async def validate_event_publish(
+        event_id: str,
+        user: str | None = None,
+        password_adapter: str | None = None,
+    ) -> str:
+        try:
+            headers = await _auth.get_headers()
+            headers["Content-Type"] = "application/json"
+            params = _user_params(client.realm, user, password_adapter)
+            payload = {"publishing": "validate"}
+            async with httpx.AsyncClient() as http:
+                resp = await http.post(
+                    f"{BASE_URL}/events/{event_id}/state",
+                    headers=headers, params=params, json=payload, timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
+    
