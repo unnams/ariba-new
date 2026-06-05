@@ -1,32 +1,52 @@
-"""SAP Ariba MCP Server — entrypoint.
-
-API Reference: https://help.sap.com/docs/ariba-apis
-Developer Portal: https://developer.ariba.com
-"""
+import os
+from pathlib import Path
 
 from fastmcp import FastMCP
+from mcp.types import Icon
+from starlette.requests import Request
+from starlette.responses import FileResponse, Response
+
+from starlette.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+
 
 from ariba_mcp.client import AribaClient
 from ariba_mcp.config import get_settings
+from ariba_mcp.prompts import register_all_prompts
+from ariba_mcp.prompts.procurement import build_assistant_body
 from ariba_mcp.tools import register_all_tools
 
-# Create client at module level — no event loop needed here since
-# httpx.AsyncClient is created per-request inside each method.
 _client = AribaClient(get_settings())
+
+_LOGO_PATH = Path(__file__).resolve().parents[2] / "assets" / "logo.png"
+_PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://ariba-mcp.onrender.com")
 
 mcp = FastMCP(
     "ariba-mcp",
-    instructions=(
-        "SAP Ariba Procurement MCP Server. "
-        "Use ariba_* tools to query procurement reporting, sourcing projects, "
-        "analytical data, supplier information, contract compliance, "
-        "document approvals, audit logs, and supplier risk from your SAP Ariba realm. "
-        "API docs: https://help.sap.com/docs/ariba-apis"
-    ),
+    instructions=build_assistant_body(),
+    icons=[
+        Icon(
+            src=f"{_PUBLIC_BASE_URL}/logo.png",
+            mimeType="image/png",
+            sizes=["1024x1024"],
+        ),
+    ],
 )
 
-# Register all tools at import time so tools/list works immediately.
+
+@mcp.custom_route("/logo.png", methods=["GET"])
+async def serve_logo(_: Request) -> Response:
+    if not _LOGO_PATH.exists():
+        return Response(status_code=404)
+    return FileResponse(_LOGO_PATH, media_type="image/png")
+
+
 register_all_tools(mcp, _client)
+register_all_prompts(mcp)
+
+
 
 if __name__ == "__main__":
     mcp.run()

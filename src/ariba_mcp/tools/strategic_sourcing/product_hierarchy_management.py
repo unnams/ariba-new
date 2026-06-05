@@ -1,22 +1,3 @@
-"""Product Hierarchy Management API.
-
-Owner: Shabreen
-Docs: https://help.sap.com/doc/27b5932567614e0eb559242fe24f57c4/cloud/en-US/index.html
-
-This API retrieves product questionnaires responded to by a supplier,
-including details on associated sourcing events and line items.
-
-Endpoints implemented:
-  GET /productQuestionnaires              – list all product questionnaires
-  GET /productQuestionnaires/{id}         – get a specific questionnaire by ID
-  GET /productQuestionnaires/{id}/lineItems – get line items for a questionnaire
-
-Prerequisites:
-  - SAP Ariba Developer Portal access
-  - OAuth authentication configured (handled by AribaClient)
-  - SAP Ariba Sourcing solution enabled
-"""
-
 import json
 
 from fastmcp import FastMCP
@@ -24,7 +5,6 @@ from fastmcp import FastMCP
 from ariba_mcp.client import AribaClient
 from ariba_mcp.errors import handle_ariba_error
 
-# Note the v2 version in the path — confirmed from API docs
 PRODUCT_HIERARCHY_API = "product-hierarchy/v2/prod"
 
 
@@ -45,16 +25,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         skip: int | None = None,
         count: bool | None = None,
     ) -> str:
-        """
-        Args:
-            realm:  Required. The target SAP Ariba realm (e.g. 'MyCompanyS4').
-            filter: Optional. OData $filter expression. Supported fields:
-                      supplierId, eventId, status, createdDate, updatedDate
-                    Example: "supplierId eq 'SUP-001' and status eq 'Completed'"
-            top:    Optional. Max records per page (default 10).
-            skip:   Optional. Number of records to skip (offset, default 0).
-            count:  Optional. If True, returns total count of matching records.
-        """
         try:
             params: dict = {"realm": realm}
             if filter:
@@ -84,11 +54,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         realm: str,
         questionnaire_id: str,
     ) -> str:
-        """
-        Args:
-            realm:             Required. The target SAP Ariba realm.
-            questionnaire_id:  Required. The unique ID of the product questionnaire.
-        """
         try:
             params: dict = {"realm": realm}
             result = await client.fetch_resource(
@@ -115,13 +80,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         top: int | None = None,
         skip: int | None = None,
     ) -> str:
-        """
-        Args:
-            realm:            Required. The target SAP Ariba realm.
-            questionnaire_id: Required. The unique ID of the product questionnaire.
-            top:              Optional. Max records per page (default 10).
-            skip:             Optional. Number of records to skip (offset, default 0).
-        """
         try:
             params: dict = {"realm": realm}
             if top is not None:

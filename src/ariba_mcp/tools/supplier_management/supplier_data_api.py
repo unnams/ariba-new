@@ -1,15 +1,3 @@
-"""Supplier Data API (supplierdataaccess/v1).
-
-Owner: Nitish SM
-Prod URL: https://openapi.ariba.com/api/supplierdataaccess/v1/prod
-Docs: https://help.sap.com/doc/ae35ad2426d54acca48272f08dbfbe73/cloud/en-US/c1f5f6056132476db23a1251add642ae.html
-
-Retrieves supplier data including registration status, qualification status,
-preferred status, and questionnaire details.
-
-Authentication: OAuth 2.0 Bearer token + apiKey header (own credentials)
-"""
-
 import json
 
 import httpx
@@ -34,7 +22,6 @@ def _make_auth() -> DirectAuthClient:
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
-    """Register Supplier Data API tools."""
 
     _auth = _make_auth()
 

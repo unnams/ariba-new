@@ -1,26 +1,3 @@
-"""Supplier Risk Engagements API.
-
-Owner: Nitish SM
-Prod URL: https://openapi.ariba.com/api/risk-engagement/v2/prod
-Swagger: swagger (11).json
-Docs: https://help.sap.com/doc/892703b130354abbb5013c3587a08cb2/cloud/en-US/270c23ef0b584430aaf0d932755d3089.html
-
-Endpoints (all GET, all require realm):
-  /engagements          — list (requires $filter with updatedDateTo)
-  /engagements/{wsId}   — single engagement by workspace ID
-  /issues               — list (requires $filter with updatedDateTo)
-  /issues/{wsId}        — single issue by workspace ID
-  /questionnaires       — list (requires $filter with updatedDateTo)
-  /questionnaires/{wsId}— single questionnaire by workspace ID
-
-$filter format: updatedDateFrom ge <date>Z and updatedDateTo le <date>Z
-  updatedDateTo is MANDATORY. Date format: yyyy-MM-ddTHH:mm:ssZ (GMT)
-
-Pagination: $top (max 100), $skip (offset or pageToken), $count=true
-
-Authentication: OAuth 2.0 Bearer token + apiKey header (own credentials)
-"""
-
 import json
 from datetime import datetime, timezone
 
@@ -46,7 +23,6 @@ def _make_auth() -> DirectAuthClient:
 
 
 def _build_filter(updated_since: str | None, updated_until: str | None) -> str:
-    """Build $filter string. Both dates are required by the API."""
     if not updated_since:
         updated_since = "2020-01-01T00:00:00Z"
     if not updated_until:
@@ -55,11 +31,8 @@ def _build_filter(updated_since: str | None, updated_until: str | None) -> str:
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
-    """Register Supplier Risk Engagements API tools."""
 
     _auth = _make_auth()
-
-    # ── Engagements ──
 
     @mcp.tool(
         name="ariba_risk_engagement_list",
@@ -120,8 +93,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
 
-    # ── Issues ──
-
     @mcp.tool(
         name="ariba_risk_issue_list",
         description=(
@@ -178,8 +149,6 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
-
-    # ── Questionnaires ──
 
     @mcp.tool(
         name="ariba_risk_questionnaire_list",
