@@ -161,7 +161,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
     )
     async def create_event(
-        title: str,
+        title: str,  
+        
         owner_email: str | None = None,
         template_id: str | None = None,
         parent_project_id: str | None = None,
