@@ -2,7 +2,7 @@ import json
 
 from fastmcp import FastMCP
 from ariba_mcp.client import AribaClient
-from ariba_mcp.config import get_profile_settings
+from ariba_mcp.config import get_settings
 from ariba_mcp.errors import handle_ariba_error
 
 SOURCING_PROJECT_API = "https://openapi.ariba.com/api/sourcing-project-management/v2/prod"
@@ -30,7 +30,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         page_token: str | None = None,
     ) -> str:
         try:
-            active_client = AribaClient(get_profile_settings("SAPI"))
+            active_client = AribaClient(get_settings("SAPI"))
             effective_user = user or active_client._settings.ariba_user
             effective_adapter = password_adapter or active_client._settings.ariba_password_adapter
             if not effective_user or not effective_adapter:
@@ -91,7 +91,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         password_adapter: str | None = None,
     ) -> str:
         try:
-            active_client = AribaClient(get_profile_settings("SAPI"))
+            active_client = AribaClient(get_settings("SAPI"))
             effective_user = user or active_client._settings.ariba_user
             effective_adapter = password_adapter or active_client._settings.ariba_password_adapter
             if not effective_user or not effective_adapter:
@@ -138,7 +138,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         password_adapter: str | None = None,
     ) -> str:
         try:
-            active_client = AribaClient(get_profile_settings("SAPI"))
+            active_client = AribaClient(get_settings("SAPI"))
             payload = json.loads(project_data)
             effective_user = user or active_client._settings.ariba_user
             effective_adapter = password_adapter or active_client._settings.ariba_password_adapter
