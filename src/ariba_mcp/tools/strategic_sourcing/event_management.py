@@ -333,7 +333,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
-        @mcp.tool(
+    @mcp.tool(
         name="ariba_event_validate_publish",
         description=(
             "Validate whether a sourcing event can be published. "
