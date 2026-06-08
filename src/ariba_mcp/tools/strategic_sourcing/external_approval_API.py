@@ -14,9 +14,9 @@ BASE_URL = "https://openapi.ariba.com/api/sourcing-approval/v2/prod"
 def _make_auth() -> DirectAuthClient:
     s = get_settings()
     return DirectAuthClient(
-        client_id=s.SOURCING_APPROVAL_CLIENT_ID,
-        client_secret=s.SOURCING_APPROVAL_CLIENT_SECRET,
-        api_key=s.SOURCING_APPROVAL_API_KEY,
+        client_id=s.sourcing_approval_client_id,
+        client_secret=s.sourcing_approval_client_secret,
+        api_key=s.sourcing_approval_api_key,
     )
 
 
