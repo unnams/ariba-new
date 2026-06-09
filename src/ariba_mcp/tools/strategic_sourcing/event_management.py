@@ -36,7 +36,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     @mcp.tool(
         name="ariba_event_list_items",
         description=(
-            "List items added to a sourcing event (e.g. RFx, Auction). "
+            "List items added to a sourcing event. "
             "event_id is the document ID like 'Doc5653890759'."
         ),
         annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
@@ -49,6 +49,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         try:
             headers = await _auth.get_headers()
             params = _user_params(client.realm, user, password_adapter)
+
             async with httpx.AsyncClient() as http:
                 resp = await http.get(
                     f"{BASE_URL}/events/{event_id}/items",
@@ -57,6 +58,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     timeout=60,
                 )
                 resp.raise_for_status()
+
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
@@ -80,6 +82,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             headers = await _auth.get_headers()
             headers["Content-Type"] = "application/json"
             params = _user_params(client.realm, user, password_adapter)
+
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     f"{BASE_URL}/events/{event_id}/items",
@@ -89,6 +92,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     timeout=60,
                 )
                 resp.raise_for_status()
+
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
@@ -116,6 +120,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             params["fieldId"] = field_id
             params["isReference"] = "true" if is_reference else "false"
             headers = await _auth.get_headers()
+
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     f"{BASE_URL}/events/{event_id}/items/{item_id}/attachments",
@@ -125,95 +130,96 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     timeout=60,
                 )
                 resp.raise_for_status()
+
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
+
     @mcp.tool(
         name="ariba_event_add_line_item_with_price_quantity",
         description=(
-        "Add a new sourcing event line item with Price and Quantity terms. "
-        "Ask only for event_id, item title, quantity, price, currency, and unit of measure. "
-        "Do not ask for fieldId."
-    ),
-    annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
-)
- async def add_line_item_with_price_quantity(
-     event_id: str,
-     title: str,
-     quantity: float,
-     price: float,
-     currency: str = "USD",
-     unit_of_measure_code: str = "EA",
-     reserve_price: float | None = None,
-     user: str | None = None,
-     password_adapter: str | None = None,
-) -> str:
-    try:
-        reserve_price = reserve_price if reserve_price is not None else price
-        payload = [
-            {
-                "title": title,
-                "itemType": 4,
-                "terms": [
-                    {
-                        "title": "Price",
-                        "historicValueProperty": 1,
-                        "reserverValueProperty": 1,
-                        "value": {
-                            "moneyValue": {
-                                "amount": price,
-                                "currency": currency,
-                            }
+            "Add a new sourcing event line item with Price and Quantity terms. "
+            "Ask only for event_id, item title, quantity, price, currency, and unit of measure. "
+            "Do not ask for fieldId."
+        ),
+        annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
+    )
+    async def add_line_item_with_price_quantity(
+        event_id: str,
+        title: str,
+        quantity: float,
+        price: float,
+        currency: str = "USD",
+        unit_of_measure_code: str = "EA",
+        reserve_price: float | None = None,
+        user: str | None = None,
+        password_adapter: str | None = None,
+    ) -> str:
+        try:
+            reserve_price = reserve_price if reserve_price is not None else price
+            payload = [
+                {
+                    "title": title,
+                    "itemType": 4,
+                    "terms": [
+                        {
+                            "title": "Price",
+                            "historicValueProperty": 1,
+                            "reserverValueProperty": 1,
+                            "value": {
+                                "moneyValue": {
+                                    "amount": price,
+                                    "currency": currency,
+                                }
+                            },
+                            "historyValue": {
+                                "moneyValue": {
+                                    "amount": price,
+                                    "currency": currency,
+                                }
+                            },
+                            "reserveValue": {
+                                "moneyValue": {
+                                    "amount": reserve_price,
+                                    "currency": currency,
+                                }
+                            },
                         },
-                        "historyValue": {
-                            "moneyValue": {
-                                "amount": price,
-                                "currency": currency,
-                            }
+                        {
+                            "title": "Quantity",
+                            "value": {
+                                "quantityValue": {
+                                    "amount": quantity,
+                                    "unitOfMeasureCode": unit_of_measure_code,
+                                }
+                            },
                         },
-                        "reserveValue": {
-                            "moneyValue": {
-                                "amount": reserve_price,
-                                "currency": currency,
-                            }
-                        },
-                    },
-                    {
-                        "title": "Quantity",
-                        "value": {
-                            "quantityValue": {
-                                "amount": quantity,
-                                "unitOfMeasureCode": unit_of_measure_code,
-                            }
-                        },
-                    },
-                ],
-            }
-        ]
+                    ],
+                }
+            ]
 
-        headers = await _auth.get_headers()
-        headers["Content-Type"] = "application/json"
-        params = _user_params(client.realm, user, password_adapter)
+            headers = await _auth.get_headers()
+            headers["Content-Type"] = "application/json"
+            params = _user_params(client.realm, user, password_adapter)
 
-        async with httpx.AsyncClient() as http:
-            resp = await http.post(
-                f"{BASE_URL}/events/{event_id}/items",
-                headers=headers,
-                params=params,
-                json=payload,
-                timeout=60,
-            )
-            resp.raise_for_status()
+            async with httpx.AsyncClient() as http:
+                resp = await http.post(
+                    f"{BASE_URL}/events/{event_id}/items",
+                    headers=headers,
+                    params=params,
+                    json=payload,
+                    timeout=60,
+                )
+                resp.raise_for_status()
 
-        return json.dumps(resp.json(), default=str)
-    except Exception as e:
-        return handle_ariba_error(e)
+            return json.dumps(resp.json(), default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
 
-   
     @mcp.tool(
         name="ariba_event_create",
         description=(
-            "Create a new sourcing event (RFx/RFP/Auction) in Ariba. "
+            "Create a new sourcing event. "
             "Required: title. owner_email, template_id, and parent_project_id are optional."
         ),
         annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
@@ -235,6 +241,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             owner_email = owner_email or s.sourcing_owner_email
             template_id = template_id or s.sourcing_default_template_id
             parent_project_id = parent_project_id or s.sourcing_default_workspace_id
+
             missing = [
                 name
                 for name, val in (
@@ -257,6 +264,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             params = _user_params(client.realm, user, password_adapter)
             params["inheritTerms"] = "true"
             params["removeEmptyOwnerTerms"] = "true"
+
             payload = {
                 "title": title,
                 "description": description,
@@ -269,11 +277,13 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                 "parentProjectId": parent_project_id,
                 "isTest": is_test,
             }
+
             if extra_fields:
                 payload.update(json.loads(extra_fields))
 
             headers = await _auth.get_headers()
             headers["Content-Type"] = "application/json"
+
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     f"{BASE_URL}/events",
@@ -283,6 +293,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     timeout=60,
                 )
                 resp.raise_for_status()
+
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
@@ -313,9 +324,11 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     ]
                 }
             ]
+
             headers = await _auth.get_headers()
             headers["Content-Type"] = "application/json"
             params = _user_params(client.realm, user, password_adapter)
+
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     f"{BASE_URL}/events/{event_id}/supplierInvitations",
@@ -325,6 +338,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     timeout=60,
                 )
                 resp.raise_for_status()
+
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
@@ -343,6 +357,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         try:
             headers = await _auth.get_headers()
             params = _user_params(client.realm, user, password_adapter)
+
             async with httpx.AsyncClient() as http:
                 resp = await http.get(
                     f"{BASE_URL}/events/{event_id}/supplierInvitations/{supplier_user}",
@@ -351,6 +366,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     timeout=60,
                 )
                 resp.raise_for_status()
+
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
@@ -368,6 +384,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         try:
             headers = await _auth.get_headers()
             params = _user_params(client.realm, user, password_adapter)
+
             async with httpx.AsyncClient() as http:
                 resp = await http.get(
                     f"{BASE_URL}/events/{event_id}/supplierBids",
@@ -376,6 +393,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     timeout=60,
                 )
                 resp.raise_for_status()
+
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
@@ -399,6 +417,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                 "actionName": "PUBLISH",
                 "ids": {"eventId": event_id},
             }
+
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     f"{BASE_URL}/jobs",
@@ -408,6 +427,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     timeout=60,
                 )
                 resp.raise_for_status()
+
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
@@ -427,6 +447,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             headers["Content-Type"] = "application/json"
             params = _user_params(client.realm, user, password_adapter)
             payload = {"publishing": "validate"}
+
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     f"{BASE_URL}/events/{event_id}/state",
@@ -436,6 +457,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     timeout=60,
                 )
                 resp.raise_for_status()
+
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
