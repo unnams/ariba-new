@@ -230,7 +230,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
           "event_id is the sourcing event document ID. "
         "If the user gives a supplier email address, use it as the supplier user's uniqueName "
         "in the supplier invitation payload. "
-        ""Do not ask for ANID or supplier organization ID. ""
+        "Do not ask for ANID or supplier organization ID. "
         ),
         annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
     )
