@@ -138,15 +138,15 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
 )
  async def add_line_item_with_price_quantity(
-    event_id: str,
-    title: str,
-    quantity: float,
-    price: float,
-    currency: str = "USD",
-    unit_of_measure_code: str = "EA",
-    reserve_price: float | None = None,
-    user: str | None = None,
-    password_adapter: str | None = None,
+     event_id: str,
+     title: str,
+     quantity: float,
+     price: float,
+     currency: str = "USD",
+     unit_of_measure_code: str = "EA",
+     reserve_price: float | None = None,
+     user: str | None = None,
+     password_adapter: str | None = None,
 ) -> str:
     try:
         reserve_price = reserve_price if reserve_price is not None else price
