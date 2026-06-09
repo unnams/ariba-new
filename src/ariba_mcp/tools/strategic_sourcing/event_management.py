@@ -226,8 +226,12 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     @mcp.tool(
         name="ariba_event_add_supplier_invitations",
         description=(
-            "Invite suppliers to a sourcing event. "
-            "invitations_data is a JSON string of the supplier invitations array."
+           "Invite suppliers to a sourcing event. "
+          "event_id is the sourcing event document ID. "
+        "If the user gives a supplier email address, use it as the supplier user's uniqueName "
+        "in the supplier invitation payload. "
+        "Ask for ANID or supplier organization ID only if the email invitation fails or the user specifically wants organization-level invitation. "
+        "invitations_data is a JSON string of the supplier invitations array.
         ),
         annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
     )
