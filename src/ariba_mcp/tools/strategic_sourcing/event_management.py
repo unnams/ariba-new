@@ -241,7 +241,18 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         password_adapter: str | None = None,
     ) -> str:
         try:
-            payload = json.loads(invitations_data)
+           //// payload = json.loads(invitations_data)////
+            adapter = password_adapter or get_settings().sourcing_pm_password_adapter
+            payload = [
+            {
+                "contacts": [
+                    {
+                        "uniqueName": supplier_email,
+                        "passwordAdapter": adapter,
+                    }
+                ]
+            }
+        ]
             headers = await _auth.get_headers()
             headers["Content-Type"] = "application/json"
             params = _user_params(client.realm, user, password_adapter)
