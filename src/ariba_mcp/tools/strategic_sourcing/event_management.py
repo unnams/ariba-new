@@ -231,7 +231,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         "If the user gives a supplier email address, use it as the supplier user's uniqueName "
         "in the supplier invitation payload. "
         "Ask for ANID or supplier organization ID only if the email invitation fails or the user specifically wants organization-level invitation. "
-        "invitations_data is a JSON string of the supplier invitations array.
+        "invitations_data is a JSON string of the supplier invitations array."
         ),
         annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
     )
