@@ -431,33 +431,3 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
-
-    @mcp.tool(
-        name="ariba_event_validate_publish",
-        description="Validate whether a sourcing event can be published.",
-        annotations={"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
-    )
-    async def validate_event_publish(
-        event_id: str,
-        user: str | None = None,
-        password_adapter: str | None = None,
-    ) -> str:
-        try:
-            headers = await _auth.get_headers()
-            headers["Content-Type"] = "application/json"
-            params = _user_params(client.realm, user, password_adapter)
-            payload = {"publishing": "validate"}
-
-            async with httpx.AsyncClient() as http:
-                resp = await http.post(
-                    f"{BASE_URL}/events/{event_id}/state",
-                    headers=headers,
-                    params=params,
-                    json=payload,
-                    timeout=60,
-                )
-                resp.raise_for_status()
-
-            return json.dumps(resp.json(), default=str)
-        except Exception as e:
-            return handle_ariba_error(e)
