@@ -137,7 +137,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     ),
     annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
 )
-async def add_line_item_with_price_quantity(
+ async def add_line_item_with_price_quantity(
     event_id: str,
     title: str,
     quantity: float,
