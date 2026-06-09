@@ -39,10 +39,10 @@ class AribaSettings(BaseSettings):
     """
 
     # Required credentials — shared across all 8 team members
-    ariba_realm: str
-    ariba_client_id: str
-    ariba_client_secret: str
-    ariba_api_key: str
+    ariba_realm: str = ""
+    ariba_client_id: str = ""
+    ariba_client_secret: str= ""
+    ariba_api_key: str= ""
 
     # Supplier Risk Engagements API credentials
     ariba_risk_client_id: str = ""
