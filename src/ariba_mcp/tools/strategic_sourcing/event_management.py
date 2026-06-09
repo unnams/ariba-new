@@ -35,7 +35,10 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
 
     @mcp.tool(
         name="ariba_event_list_items",
-        description="List items added to a sourcing event.",
+        description=(
+            "List items added to a sourcing event (e.g. RFx, Auction). "
+            "event_id is the document ID like 'Doc5653890759'."
+        ),
         annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     )
     async def list_event_items(
@@ -60,7 +63,10 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
 
     @mcp.tool(
         name="ariba_event_add_items",
-        description="Add items to an existing sourcing event. items_data must be a JSON string per Ariba schema.",
+        description=(
+            "Add items to an existing sourcing event. "
+            "items_data is a JSON string representing the items array per Ariba schema."
+        ),
         annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
     )
     async def add_event_items(
@@ -154,6 +160,83 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             return handle_ariba_error(e)
 
     @mcp.tool(
+        name="ariba_event_create",
+        description=(
+            "Create a new sourcing event (RFx/RFP/Auction) in Ariba. "
+            "Required: title. owner_email, template_id, and parent_project_id are optional."
+        ),
+        annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
+    )
+    async def create_event(
+        title: str,
+        owner_email: str | None = None,
+        template_id: str | None = None,
+        parent_project_id: str | None = None,
+        description: str = "",
+        owner_name: str | None = None,
+        is_test: bool = True,
+        extra_fields: str | None = None,
+        user: str | None = None,
+        password_adapter: str | None = None,
+    ) -> str:
+        try:
+            s = get_settings()
+            owner_email = owner_email or s.sourcing_owner_email
+            template_id = template_id or s.sourcing_default_template_id
+            parent_project_id = parent_project_id or s.sourcing_default_workspace_id
+            missing = [
+                name
+                for name, val in (
+                    ("owner_email", owner_email),
+                    ("template_id", template_id),
+                    ("parent_project_id", parent_project_id),
+                )
+                if not val
+            ]
+            if missing:
+                return json.dumps({
+                    "error": "Missing required field(s) and no server defaults configured.",
+                    "missing": missing,
+                    "hint": (
+                        "Set SOURCING_OWNER_EMAIL / SOURCING_DEFAULT_TEMPLATE_ID / "
+                        "SOURCING_DEFAULT_WORKSPACE_ID env vars, or pass them explicitly."
+                    ),
+                })
+
+            params = _user_params(client.realm, user, password_adapter)
+            params["inheritTerms"] = "true"
+            params["removeEmptyOwnerTerms"] = "true"
+            payload = {
+                "title": title,
+                "description": description,
+                "owner": {
+                    "uniqueName": owner_email,
+                    "passwordAdapter": params["passwordAdapter"],
+                    "name": owner_name or owner_email,
+                },
+                "templateDocumentInternalId": template_id,
+                "parentProjectId": parent_project_id,
+                "isTest": is_test,
+            }
+            if extra_fields:
+                payload.update(json.loads(extra_fields))
+
+            headers = await _auth.get_headers()
+            headers["Content-Type"] = "application/json"
+            async with httpx.AsyncClient() as http:
+                resp = await http.post(
+                    f"{BASE_URL}/events",
+                    headers=headers,
+                    params=params,
+                    json=payload,
+                    timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
+
+    @mcp.tool(
         name="ariba_event_add_supplier_invitations",
         description=(
             "Invite a supplier to a sourcing event using supplier email only. "
@@ -195,5 +278,113 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
 
-    # Keep your create_event, get_supplier_invitation, get_supplier_bids,
-    # publish_event, and validate_event_publish below this point at same 4-space indentation.
+    @mcp.tool(
+        name="ariba_event_get_supplier_invitation",
+        description="Get a specific supplier's invitation/bid for an event.",
+        annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    )
+    async def get_supplier_invitation(
+        event_id: str,
+        supplier_user: str,
+        user: str | None = None,
+        password_adapter: str | None = None,
+    ) -> str:
+        try:
+            headers = await _auth.get_headers()
+            params = _user_params(client.realm, user, password_adapter)
+            async with httpx.AsyncClient() as http:
+                resp = await http.get(
+                    f"{BASE_URL}/events/{event_id}/supplierInvitations/{supplier_user}",
+                    headers=headers,
+                    params=params,
+                    timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
+
+    @mcp.tool(
+        name="ariba_event_get_supplier_bids",
+        description="Fetch all supplier bids submitted for a sourcing event.",
+        annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    )
+    async def get_supplier_bids(
+        event_id: str,
+        user: str | None = None,
+        password_adapter: str | None = None,
+    ) -> str:
+        try:
+            headers = await _auth.get_headers()
+            params = _user_params(client.realm, user, password_adapter)
+            async with httpx.AsyncClient() as http:
+                resp = await http.get(
+                    f"{BASE_URL}/events/{event_id}/supplierBids",
+                    headers=headers,
+                    params=params,
+                    timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
+
+    @mcp.tool(
+        name="ariba_event_publish",
+        description="Publish a sourcing event so suppliers can see and respond to it.",
+        annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
+    )
+    async def publish_event(
+        event_id: str,
+        user: str | None = None,
+        password_adapter: str | None = None,
+    ) -> str:
+        try:
+            headers = await _auth.get_headers()
+            headers["Content-Type"] = "application/json"
+            params = _user_params(client.realm, user, password_adapter)
+            payload = {
+                "resourceType": "EVENT",
+                "actionName": "PUBLISH",
+                "ids": {"eventId": event_id},
+            }
+            async with httpx.AsyncClient() as http:
+                resp = await http.post(
+                    f"{BASE_URL}/jobs",
+                    headers=headers,
+                    params=params,
+                    json=payload,
+                    timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
+
+    @mcp.tool(
+        name="ariba_event_validate_publish",
+        description="Validate whether a sourcing event can be published.",
+        annotations={"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    )
+    async def validate_event_publish(
+        event_id: str,
+        user: str | None = None,
+        password_adapter: str | None = None,
+    ) -> str:
+        try:
+            headers = await _auth.get_headers()
+            headers["Content-Type"] = "application/json"
+            params = _user_params(client.realm, user, password_adapter)
+            payload = {"publishing": "validate"}
+            async with httpx.AsyncClient() as http:
+                resp = await http.post(
+                    f"{BASE_URL}/events/{event_id}/state",
+                    headers=headers,
+                    params=params,
+                    json=payload,
+                    timeout=60,
+                )
+                resp.raise_for_status()
+            return json.dumps(resp.json(), default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
