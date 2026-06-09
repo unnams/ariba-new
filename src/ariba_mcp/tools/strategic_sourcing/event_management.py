@@ -128,37 +128,88 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
-
     @mcp.tool(
-        name="ariba_event_update_item",
-        description="Update an existing sourcing event item or item terms such as Quantity.",
-        annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
-    )
-    async def update_event_item(
-        event_id: str,
-        item_id: str,
-        item_data: str,
-        user: str | None = None,
-        password_adapter: str | None = None,
-    ) -> str:
-        try:
-            payload = json.loads(item_data)
-            headers = await _auth.get_headers()
-            headers["Content-Type"] = "application/json"
-            params = _user_params(client.realm, user, password_adapter)
-            async with httpx.AsyncClient() as http:
-                resp = await http.patch(
-                    f"{BASE_URL}/events/{event_id}/items/{item_id}",
-                    headers=headers,
-                    params=params,
-                    json=payload,
-                    timeout=60,
-                )
-                resp.raise_for_status()
-            return json.dumps(resp.json(), default=str)
-        except Exception as e:
-            return handle_ariba_error(e)
+        name="ariba_event_add_line_item_with_price_quantity",
+        description=(
+        "Add a new sourcing event line item with Price and Quantity terms. "
+        "Ask only for event_id, item title, quantity, price, currency, and unit of measure. "
+        "Do not ask for fieldId."
+    ),
+    annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
+)
+async def add_line_item_with_price_quantity(
+    event_id: str,
+    title: str,
+    quantity: float,
+    price: float,
+    currency: str = "USD",
+    unit_of_measure_code: str = "EA",
+    reserve_price: float | None = None,
+    user: str | None = None,
+    password_adapter: str | None = None,
+) -> str:
+    try:
+        reserve_price = reserve_price if reserve_price is not None else price
+        payload = [
+            {
+                "title": title,
+                "itemType": 4,
+                "terms": [
+                    {
+                        "title": "Price",
+                        "historicValueProperty": 1,
+                        "reserverValueProperty": 1,
+                        "value": {
+                            "moneyValue": {
+                                "amount": price,
+                                "currency": currency,
+                            }
+                        },
+                        "historyValue": {
+                            "moneyValue": {
+                                "amount": price,
+                                "currency": currency,
+                            }
+                        },
+                        "reserveValue": {
+                            "moneyValue": {
+                                "amount": reserve_price,
+                                "currency": currency,
+                            }
+                        },
+                    },
+                    {
+                        "title": "Quantity",
+                        "value": {
+                            "quantityValue": {
+                                "amount": quantity,
+                                "unitOfMeasureCode": unit_of_measure_code,
+                            }
+                        },
+                    },
+                ],
+            }
+        ]
 
+        headers = await _auth.get_headers()
+        headers["Content-Type"] = "application/json"
+        params = _user_params(client.realm, user, password_adapter)
+
+        async with httpx.AsyncClient() as http:
+            resp = await http.post(
+                f"{BASE_URL}/events/{event_id}/items",
+                headers=headers,
+                params=params,
+                json=payload,
+                timeout=60,
+            )
+            resp.raise_for_status()
+
+        return json.dumps(resp.json(), default=str)
+    except Exception as e:
+        return handle_ariba_error(e)
+
+   
     @mcp.tool(
         name="ariba_event_create",
         description=(
