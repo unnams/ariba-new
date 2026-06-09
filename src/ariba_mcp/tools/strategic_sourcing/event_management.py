@@ -99,8 +99,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
-
-    @mcp.tool(
+   @mcp.tool(
         name="ariba_event_item_add_attachment",
         description=(
             "Upload a file as an attachment to a specific item (Question/LineItem) in a "
@@ -146,6 +145,35 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
+
+@mcp.tool(
+    name="ariba_event_update_item",
+    description="Update an existing sourcing event item or item terms such as Quantity."
+)
+async def update_event_item(
+    event_id: str,
+    item_id: str,
+    item_data: str,
+    user: str | None = None,
+    password_adapter: str | None = None,
+) -> str:
+    payload = json.loads(item_data)
+    headers = await _auth.get_headers()
+    headers["Content-Type"] = "application/json"
+    params = _user_params(client.realm, user, password_adapter)
+
+    async with httpx.AsyncClient() as http:
+        resp = await http.patch(
+            f"{BASE_URL}/events/{event_id}/items/{item_id}",
+            headers=headers,
+            params=params,
+            json=payload,
+            timeout=60,
+        )
+        resp.raise_for_status()
+
+    return json.dumps(resp.json(), default=str)
+  
 
     @mcp.tool(
         name="ariba_event_create",
