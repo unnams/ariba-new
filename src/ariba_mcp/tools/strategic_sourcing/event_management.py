@@ -241,8 +241,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         password_adapter: str | None = None,
     ) -> str:
         try:
-           //// payload = json.loads(invitations_data)////
-            adapter = password_adapter or get_settings().sourcing_pm_password_adapter
+            adapter = password_adapter
             payload = [
             {
                 "contacts": [
