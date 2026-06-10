@@ -220,70 +220,66 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         name="ariba_event_create",
         description=(
             "Create a new sourcing event. "
-            "Required: title and template_id.""event_type_name defaults to RFQ. "
-             "Do not ask for owner_email or parent_project_id."
-            
+            "Required: title and template_id. "
+            "event_type_name defaults to RFQ. "
+            "Do not ask for owner_email or parent_project_id."
         ),
         annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
     )
     async def create_event(
         title: str,
-        owner_email: str | None = None,
         template_id: str | None = None,
-        parent_project_id: str | None = None,
+        event_type_name: str = "RFQ",
+        is_test: bool = False,
         description: str = "",
-        owner_name: str | None = None,
-        is_test: bool = True,
         extra_fields: str | None = None,
         user: str | None = None,
         password_adapter: str | None = None,
     ) -> str:
         try:
             s = get_settings()
-            owner_email = owner_email or s.sourcing_owner_email
             template_id = template_id or s.sourcing_default_template_id
 
-           if not template_id:
-            return json.dumps({
-                "error": "Missing required field.",
-                "missing": ["template_id"],
-                "hint": "Set SOURCING_DEFAULT_TEMPLATE_ID env var or pass template_id explicitly.",
-            })
+            if not template_id:
+                return json.dumps({
+                    "error": "Missing required field.",
+                    "missing": ["template_id"],
+                    "hint": "Set SOURCING_DEFAULT_TEMPLATE_ID env var or pass template_id explicitly.",
+                })
 
-        params = _user_params(client.realm, user, password_adapter)
-        params["inheritTerms"] = "true"
-        params["removeEmptyOwnerTerms"] = "true"
+            params = _user_params(client.realm, user, password_adapter)
+            params["inheritTerms"] = "true"
+            params["removeEmptyOwnerTerms"] = "true"
 
-        payload = {
-            "title": title,
-            "templateDocumentInternalId": template_id,
-            "eventTypeName": event_type_name,
-            "isTest": is_test,
-        }
+            payload = {
+                "title": title,
+                "templateDocumentInternalId": template_id,
+                "eventTypeName": event_type_name,
+                "isTest": is_test,
+            }
 
-        if description:
-            payload["description"] = description
+            if description:
+                payload["description"] = description
 
-        if extra_fields:
-            payload.update(json.loads(extra_fields))
+            if extra_fields:
+                payload.update(json.loads(extra_fields))
 
-        headers = await _auth.get_headers()
-        headers["Content-Type"] = "application/json"
+            headers = await _auth.get_headers()
+            headers["Content-Type"] = "application/json"
 
-        async with httpx.AsyncClient() as http:
-            resp = await http.post(
-                f"{BASE_URL}/events",
-                headers=headers,
-                params=params,
-                json=payload,
-                timeout=60,
-            )
-            resp.raise_for_status()
+            async with httpx.AsyncClient() as http:
+                resp = await http.post(
+                    f"{BASE_URL}/events",
+                    headers=headers,
+                    params=params,
+                    json=payload,
+                    timeout=60,
+                )
+                resp.raise_for_status()
 
-        return json.dumps(resp.json(), default=str)
-
-    except Exception as e:
-        return handle_ariba_error(e)
+            return json.dumps(resp.json(), default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
 
     @mcp.tool(
         name="ariba_event_add_supplier_invitations",
