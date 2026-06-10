@@ -220,7 +220,9 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         name="ariba_event_create",
         description=(
             "Create a new sourcing event. "
-            "Required: title. owner_email, template_id, and parent_project_id are optional."
+            "Required: title and template_id.""event_type_name defaults to RFQ. "
+             "Do not ask for owner_email or parent_project_id."
+            
         ),
         annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": True},
     )
@@ -240,63 +242,48 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             s = get_settings()
             owner_email = owner_email or s.sourcing_owner_email
             template_id = template_id or s.sourcing_default_template_id
-            parent_project_id = parent_project_id or s.sourcing_default_workspace_id
 
-            missing = [
-                name
-                for name, val in (
-                    ("owner_email", owner_email),
-                    ("template_id", template_id),
-                    ("parent_project_id", parent_project_id),
-                )
-                if not val
-            ]
-            if missing:
-                return json.dumps({
-                    "error": "Missing required field(s) and no server defaults configured.",
-                    "missing": missing,
-                    "hint": (
-                        "Set SOURCING_OWNER_EMAIL / SOURCING_DEFAULT_TEMPLATE_ID / "
-                        "SOURCING_DEFAULT_WORKSPACE_ID env vars, or pass them explicitly."
-                    ),
-                })
+           if not template_id:
+            return json.dumps({
+                "error": "Missing required field.",
+                "missing": ["template_id"],
+                "hint": "Set SOURCING_DEFAULT_TEMPLATE_ID env var or pass template_id explicitly.",
+            })
 
-            params = _user_params(client.realm, user, password_adapter)
-            params["inheritTerms"] = "true"
-            params["removeEmptyOwnerTerms"] = "true"
+        params = _user_params(client.realm, user, password_adapter)
+        params["inheritTerms"] = "true"
+        params["removeEmptyOwnerTerms"] = "true"
 
-            payload = {
-                "title": title,
-                "description": description,
-                "owner": {
-                    "uniqueName": owner_email,
-                    "passwordAdapter": params["passwordAdapter"],
-                    "name": owner_name or owner_email,
-                },
-                "templateDocumentInternalId": template_id,
-                "parentProjectId": parent_project_id,
-                "isTest": is_test,
-            }
+        payload = {
+            "title": title,
+            "templateDocumentInternalId": template_id,
+            "eventTypeName": event_type_name,
+            "isTest": is_test,
+        }
 
-            if extra_fields:
-                payload.update(json.loads(extra_fields))
+        if description:
+            payload["description"] = description
 
-            headers = await _auth.get_headers()
-            headers["Content-Type"] = "application/json"
+        if extra_fields:
+            payload.update(json.loads(extra_fields))
 
-            async with httpx.AsyncClient() as http:
-                resp = await http.post(
-                    f"{BASE_URL}/events",
-                    headers=headers,
-                    params=params,
-                    json=payload,
-                    timeout=60,
-                )
-                resp.raise_for_status()
+        headers = await _auth.get_headers()
+        headers["Content-Type"] = "application/json"
 
-            return json.dumps(resp.json(), default=str)
-        except Exception as e:
-            return handle_ariba_error(e)
+        async with httpx.AsyncClient() as http:
+            resp = await http.post(
+                f"{BASE_URL}/events",
+                headers=headers,
+                params=params,
+                json=payload,
+                timeout=60,
+            )
+            resp.raise_for_status()
+
+        return json.dumps(resp.json(), default=str)
+
+    except Exception as e:
+        return handle_ariba_error(e)
 
     @mcp.tool(
         name="ariba_event_add_supplier_invitations",
