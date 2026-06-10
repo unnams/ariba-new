@@ -21,7 +21,6 @@ def _make_auth() -> DirectAuthClient:
 
 
 def register(mcp: FastMCP, client: AribaClient) -> None:
-
     _auth = _make_auth()
 
     @mcp.tool(
@@ -32,57 +31,56 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             "Use password_adapter, usually PasswordAdapter1. "
             "document_type is optional and can be blank. "
             "Defaults: limit=10, offset=0."
-    ),
-    annotations={
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": True,
-    },
-)
+        ),
+        annotations={
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
     async def get_sourcing_approvals(
         user: str,
         password_adapter: str = "PasswordAdapter1",
         document_type: str = "",
         limit: int = 10,
         offset: int = 0,
-) -> str:
-    try:
-        headers = await _auth.get_headers()
+    ) -> str:
+        try:
+            headers = await _auth.get_headers()
+            params = {
+                "user": user,
+                "passwordAdapter": password_adapter,
+                "documentType": document_type,
+                "limit": limit,
+                "offset": offset,
+                "realm": client.realm,
+            }
 
-        params = {
-            "user": user,
-            "passwordAdapter": password_adapter,
-            "documentType": document_type,
-            "limit": limit,
-            "offset": offset,
-            "realm": client.realm,
-        }
+            async with httpx.AsyncClient() as http:
+                resp = await http.get(
+                    f"{BASE_URL}/pendingApprovables",
+                    headers=headers,
+                    params=params,
+                    timeout=60,
+                )
 
-        async with httpx.AsyncClient() as http:
-            resp = await http.get(
-                f"{BASE_URL}/pendingApprovables",
-                headers=headers,
-                params=params,
-                timeout=60,
-            )
+                if resp.status_code >= 400:
+                    return json.dumps({
+                        "status_code": resp.status_code,
+                        "url": str(resp.url),
+                        "response": resp.text,
+                        "hint": (
+                            "Check that the user is the actual approver, the passwordAdapter "
+                            "matches that user, and the sourcing approval API credentials have "
+                            "read access to pendingApprovables."
+                        ),
+                    })
 
-            if resp.status_code >= 400:
-                return json.dumps({
-                    "status_code": resp.status_code,
-                    "url": str(resp.url),
-                    "response": resp.text,
-                    "hint": (
-                        "Check that the user is the actual approver, the passwordAdapter "
-                        "matches that user, and the sourcing approval API credentials have "
-                        "read access to pendingApprovables."
-                    ),
-                })
+                return json.dumps(resp.json(), default=str)
 
-            return json.dumps(resp.json(), default=str)
-
-    except Exception as e:
-        return handle_ariba_error(e)
+        except Exception as e:
+            return handle_ariba_error(e)
 
     @mcp.tool(
         name="ariba_get_sourcing_approval_changes",
@@ -102,6 +100,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         try:
             headers = await _auth.get_headers()
             params: dict = {"realm": client.realm}
+
             if last_change_id is not None:
                 params["lastChangeId"] = last_change_id
             if offset is not None:
@@ -110,6 +109,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                 params["limit"] = limit
             if filter_expr:
                 params["$filter"] = filter_expr
+
             async with httpx.AsyncClient() as http:
                 resp = await http.get(
                     f"{BASE_URL}/changes",
@@ -118,6 +118,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     timeout=60,
                 )
                 resp.raise_for_status()
+
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
@@ -146,6 +147,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                 "actionName": "Approve",
                 "options": {"comment": comments or "Approved via MCP"},
             }
+
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     f"{BASE_URL}/action",
@@ -159,6 +161,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     timeout=60,
                 )
                 resp.raise_for_status()
+
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
@@ -186,6 +189,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                 "actionName": "Deny",
                 "options": {"comment": comments},
             }
+
             async with httpx.AsyncClient() as http:
                 resp = await http.post(
                     f"{BASE_URL}/action",
@@ -199,6 +203,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
                     timeout=60,
                 )
                 resp.raise_for_status()
+
             return json.dumps(resp.json(), default=str)
         except Exception as e:
             return handle_ariba_error(e)
