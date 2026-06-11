@@ -1,7 +1,7 @@
 import json
 
 from fastmcp import FastMCP
-
+from ariba_mcp.auth import DirectAuthClient
 from ariba_mcp.client import AribaClient
 from ariba_mcp.errors import handle_ariba_error
 
