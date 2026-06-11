@@ -8,6 +8,15 @@ from ariba_mcp.errors import handle_ariba_error
 RISK_CATEGORY_API = "https://openapi.ariba.com/api/risk-category-information/v1/prod"
 
 
+def _make_sdp_auth() -> DirectAuthClient:
+    s = get_settings()
+    return DirectAuthClient(
+        client_id=s.RISK_CATEGORY_INFORMATION_CLIENT_ID,
+        client_secret=s.RISK_CATEGORY_INFORMATION_CLIENT_SECRET,
+        api_key=s.RISK_CATEGORY_INFORMATION_API_KEY,
+    )
+
+
 def register(mcp: FastMCP, client: AribaClient) -> None:
 
     @mcp.tool(
