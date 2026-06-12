@@ -36,9 +36,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             "List suppliers/vendors from the realm with optional client-side pagination. "
             "Returns supplier name, SM vendor ID, ERP vendor ID, AN ID, "
             "registration status, qualification status, address, and more. "
-            "Use page and page_size to paginate through results (e.g. page=1 page_size=50 "
-            "returns rows 1-50, page=2 returns rows 51-100). "
-            "Omit page/page_size to get all records at once."
+            "Use page and page_size to paginate through results."
         ),
         annotations={
             "readOnlyHint": True,
@@ -91,14 +89,54 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         name="ariba_supplier_get_by_vendor_id",
         description=(
             "Get supplier data for specific vendor IDs. "
-            "Pass one or more SM Vendor IDs (comma-separated, e.g. 'S70530768,S78201759'). "
-            "Returns detailed supplier information."
+            "Pass one or more SM Vendor IDs comma-separated."
         ),
-    annotations={
+        annotations={
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
-        }
+            "openWorldHint": True,
+        },
+    )
+    async def get_by_vendor_id(vendor_ids: str) -> str:
+        try:
+            ids = [v.strip() for v in vendor_ids.split(",")]
+            url = f"{client.base_url}/{API_PATH}/vendorDataRequests"
+            headers = await _sdp_auth.get_headers()
+            headers["Content-Type"] = "application/json"
+
+            async with httpx.AsyncClient() as http:
+                resp = await http.post(
+                    url,
+                    params={"realm": client.realm},
+                    headers=headers,
+                    json={"smVendorIds": ids},
+                    timeout=60,
+                )
+                resp.raise_for_status()
+
+            rows = _csv_to_json(resp.text)
+            result = {
+                "total_count": len(rows),
+                "suppliers": rows,
+            }
+
+            return json.dumps(result, default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
+
+    @mcp.tool(
+        name="ariba_supplier_questionnaire_qna",
+        description=(
+            "Fetch supplier workspace questionnaire Q&A data from SAP Ariba "
+            "Supplier Data Pagination API for a given supplier/vendor ID."
+        ),
+        annotations={
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
     )
     async def supplier_questionnaire_qna(vendor_id: str) -> str:
         try:
