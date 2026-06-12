@@ -98,3 +98,4 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
+        }
