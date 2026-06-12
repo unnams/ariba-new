@@ -246,7 +246,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
           "Fetch supplier workspace questionnaire Q&A data from SAP Ariba." 
           "Supplier Data Pagination API for a given supplier/vendor ID."
           ),
-          annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+           annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
       )
       async def supplier_qna(vendor_id:str,) -> str:
       try:
