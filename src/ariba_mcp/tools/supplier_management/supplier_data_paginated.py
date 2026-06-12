@@ -130,106 +130,103 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         description=(
             "Fetch only bank and tax related questionnaire Q&A data for a given SAP Ariba supplier/vendor ID. "
             "Use this when full questionnaire Q&A is too large."
-    ),
-    annotations={
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": True,
-    },
-)
-async def supplier_bank_tax_qna(vendor_id: str) -> str:
-    try:
-        url = (
-            f"{client.base_url}/{API_PATH}/vendors/"
-            f"{vendor_id}/workspaces/questionnaires/qna"
-        )
-
-        headers = await _sdp_auth.get_headers()
-        headers["Accept"] = "application/json"
-
-        async with httpx.AsyncClient() as http:
-            resp = await http.get(
-                url,
-                params={"realm": client.realm},
-                headers=headers,
-                timeout=60,
-            )
-            resp.raise_for_status()
-
+        ),
+        annotations={
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def supplier_bank_tax_qna(vendor_id: str) -> str:
         try:
-            data = resp.json()
-        except Exception:
-            return json.dumps(
-                {
-                    "vendor_id": vendor_id,
-                    "error": "Response was not valid JSON",
-                    "raw_response_preview": resp.text[:5000],
-                },
-                default=str,
-            )
+            url = f"{API_PATH}/vendors/{vendor_id}/workspaces/questionnaires/qna"
 
-        keywords = [
-            "bank",
-            "banking",
-            "account",
-            "account number",
-            "iban",
-            "swift",
-            "ifsc",
-            "routing",
-            "sort code",
-            "branch",
-            "beneficiary",
-            "tax",
-            "tax id",
-            "tax number",
-            "vat",
-            "gst",
-            "tin",
-            "pan",
-            "ein",
-            "withholding",
-        ]
+            headers = await _sdp_auth.get_headers()
+            headers["Accept"] = "application/json"
 
-        def contains_keyword(value: object) -> bool:
-            text = json.dumps(value, default=str).lower()
-            return any(keyword in text for keyword in keywords)
+            async with httpx.AsyncClient() as http:
+                resp = await http.get(
+                    url,
+                    params={"realm": client.realm},
+                    headers=headers,
+                    timeout=60,
+                )
+                resp.raise_for_status()
 
-        def collect_matches(value: object, path: str = "") -> list[dict]:
-            matches = []
+            try:
+                data = resp.json()
+            except Exception:
+                return json.dumps(
+                    {
+                        "vendor_id": vendor_id,
+                        "error": "Response was not valid JSON",
+                        "raw_response_preview": resp.text[:5000],
+                    },
+                    default=str,
+                )
 
-            if isinstance(value, dict):
-                if contains_keyword(value):
-                    matches.append(
-                        {
-                            "path": path,
-                            "data": value,
-                        }
-                    )
+            keywords = [
+                "bank",
+                "banking",
+                "account",
+                "account number",
+                "iban",
+                "swift",
+                "ifsc",
+                "routing",
+                "sort code",
+                "branch",
+                "beneficiary",
+                "tax",
+                "tax id",
+                "tax number",
+                "vat",
+                "gst",
+                "tin",
+                "pan",
+                "ein",
+                "withholding",
+            ]
 
-                for key, child in value.items():
-                    child_path = f"{path}.{key}" if path else str(key)
-                    matches.extend(collect_matches(child, child_path))
+            def contains_keyword(value: object) -> bool:
+                text = json.dumps(value, default=str).lower()
+                return any(keyword in text for keyword in keywords)
 
-            elif isinstance(value, list):
-                for index, child in enumerate(value):
-                    child_path = f"{path}[{index}]"
-                    matches.extend(collect_matches(child, child_path))
+            def collect_matches(value: object, path: str = "") -> list[dict]:
+                matches = []
 
-            return matches
+                if isinstance(value, dict):
+                    if contains_keyword(value):
+                        matches.append(
+                            {
+                                "path": path,
+                                "data": value,
+                            }
+                        )
 
-        matches = collect_matches(data)
+                    for key, child in value.items():
+                        child_path = f"{path}.{key}" if path else str(key)
+                        matches.extend(collect_matches(child, child_path))
 
-        result = {
-            "vendor_id": vendor_id,
-            "filter": "bank_and_tax_related_qna",
-            "total_matches": len(matches),
-            "matches": matches[:100],
-            "note": "Returned maximum 100 matching sections to avoid context_length_exceeded error.",
-        }
+                elif isinstance(value, list):
+                    for index, child in enumerate(value):
+                        child_path = f"{path}[{index}]"
+                        matches.extend(collect_matches(child, child_path))
 
-        return json.dumps(result, default=str)
+                return matches
 
-    except Exception as e:
-        return handle_ariba_error(e)
+            matches = collect_matches(data)
+
+            result = {
+                "vendor_id": vendor_id,
+                "filter": "bank_and_tax_related_qna",
+                "total_matches": len(matches),
+                "matches": matches[:100],
+                "note": "Returned maximum 100 matching sections to avoid context_length_exceeded error.",
+            }
+
+            return json.dumps(result, default=str)
+
+        except Exception as e:
+            return handle_ariba_error(e)
