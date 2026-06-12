@@ -94,12 +94,12 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             "Pass one or more SM Vendor IDs (comma-separated, e.g. 'S70530768,S78201759'). "
             "Returns detailed supplier information."
         ),
-    )
     annotations={
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
         }
+    )
     async def supplier_questionnaire_qna(vendor_id: str) -> str:
         try:
             url = (
