@@ -241,27 +241,37 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
     @mcp.tool(
-        name="ariba_vendor_qna_bankdetails",
-        description=
-          "Fetch supplier workspace questionnaire Q&A data from SAP Ariba." 
-          "Supplier Data Pagination API for a given supplier/vendor ID."
-          ),
-           annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
-      )
-      async def supplier_qna(vendor_id:str,) -> str:
-      try:
-             url = f"{client.base_url}/{API_PATH}/vendors/{vendor_id}/workspaces/questionnaires/qna"
-             headers = await _sdp_auth.get_headers()
-             headers["Content-Type"] = "application/json"
-            async with httpx.AsyncClient() as http:
-                resp = await http.post(
-                    url,
-                    params={"realm": client.realm},
-                    headers=headers,
-                    json={},
-                    timeout=60,
-                )
-                resp.raise_for_status()
+    name="ariba_supplier_questionnaire_qna",
+    description=(
+        "Fetch supplier workspace questionnaire Q&A data from SAP Ariba "
+        "Supplier Data Pagination API for a given supplier/vendor ID."
+    ),
+    annotations={
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    },
+)
+async def supplier_questionnaire_qna(
+    vendor_id: str,
+) -> str:
+    try:
+        # Example endpoint:
+        # https://openapi.ariba.com/api/supplierdatapagination/v4/prod/vendors/S72767028/workspaces/questionnaires/qna
+        url = f"{client.base_url}/{API_PATH}/vendors/{vendor_id}/workspaces/questionnaires/qna"
+
+        headers = await _sdp_auth.get_headers()
+        headers["Accept"] = "application/json"
+
+        async with httpx.AsyncClient() as http:
+            resp = await http.get(
+                url,
+                params={"realm": client.realm},
+                headers=headers,
+                timeout=60,
+            )
+            resp.raise_for_status()
 
         try:
             data = resp.json()
@@ -276,6 +286,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         return json.dumps(result, default=str)
 
     except Exception as e:
+        return handle_ariba_error(e)
         return handle_ariba_error(e)
       
       
