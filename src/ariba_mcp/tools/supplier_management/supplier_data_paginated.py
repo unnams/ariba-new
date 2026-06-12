@@ -95,8 +95,40 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             "Returns detailed supplier information."
         ),
     )
-        annotations={
+    annotations={
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
         }
+    async def supplier_questionnaire_qna(vendor_id: str) -> str:
+        try:
+            url = (
+                f"{client.base_url}/{API_PATH}/vendors/"
+                f"{vendor_id}/workspaces/questionnaires/qna"
+            )
+
+            headers = await _sdp_auth.get_headers()
+            headers["Accept"] = "application/json"
+
+            async with httpx.AsyncClient() as http:
+                resp = await http.get(
+                    url,
+                    params={"realm": client.realm},
+                    headers=headers,
+                    timeout=60,
+                )
+                resp.raise_for_status()
+
+            try:
+                data = resp.json()
+            except Exception:
+                data = {"raw_response": resp.text}
+
+            result = {
+                "vendor_id": vendor_id,
+                "questionnaire_qna": data,
+            }
+
+            return json.dumps(result, default=str)
+        except Exception as e:
+            return handle_ariba_error(e)
