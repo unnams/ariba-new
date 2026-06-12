@@ -241,10 +241,10 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         except Exception as e:
             return handle_ariba_error(e)
     @mcp.tool(
-    name="ariba_supplier_questionnaire_qna",
-    description=(
-        "Fetch supplier workspace questionnaire Q&A data from SAP Ariba "
-        "Supplier Data Pagination API for a given supplier/vendor ID."
+        name="ariba_supplier_questionnaire_qna",
+        description=(
+            "Fetch supplier workspace questionnaire Q&A data from SAP Ariba "
+            "Supplier Data Pagination API for a given supplier/vendor ID."
     ),
     annotations={
         "readOnlyHint": True,
@@ -253,8 +253,8 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         "openWorldHint": True,
     },
 )
-async def supplier_questionnaire_qna(
-    vendor_id: str,
+ async def supplier_questionnaire_qna(
+     vendor_id: str,
 ) -> str:
     try:
         # Example endpoint:
