@@ -138,7 +138,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         "openWorldHint": True,
     },
 )
-async def supplier_bank_tax_qna(vendor_id: str) -> str:
+ async def supplier_bank_tax_qna(vendor_id: str) -> str:
     try:
         url = (
             f"{client.base_url}/{API_PATH}/vendors/"
