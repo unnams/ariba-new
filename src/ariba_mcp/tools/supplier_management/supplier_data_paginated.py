@@ -240,3 +240,43 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             return json.dumps(result, default=str)
         except Exception as e:
             return handle_ariba_error(e)
+    @mcp.tool(
+        name="ariba_vendor_qna_bankdetails"
+        description=
+          "Fetch supplier workspace questionnaire Q&A data from SAP Ariba "
+          "Supplier Data Pagination API for a given supplier/vendor ID."
+          ),
+          annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+      )
+      async def supplier_qna(vendor_id:str,) -> str:
+      try:
+             url = f"{client.base_url}/{API_PATH}/vendors/{vendor_id}/workspaces/questionnaires/qna"
+             headers = await _sdp_auth.get_headers()
+             headers["Content-Type"] = "application/json"
+            async with httpx.AsyncClient() as http:
+                resp = await http.post(
+                    url,
+                    params={"realm": client.realm},
+                    headers=headers,
+                    json={},
+                    timeout=60,
+                )
+                resp.raise_for_status()
+
+        try:
+            data = resp.json()
+        except Exception:
+            data = {"raw_response": resp.text}
+
+        result = {
+            "vendor_id": vendor_id,
+            "questionnaire_qna": data,
+        }
+
+        return json.dumps(result, default=str)
+
+    except Exception as e:
+        return handle_ariba_error(e)
+      
+      
+            
