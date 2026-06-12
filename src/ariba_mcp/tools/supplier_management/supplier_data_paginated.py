@@ -126,47 +126,110 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
             return handle_ariba_error(e)
 
     @mcp.tool(
-        name="ariba_supplier_questionnaire_qna",
+        name="ariba_supplier_bank_tax_qna",
         description=(
-            "Fetch supplier workspace questionnaire Q&A data from SAP Ariba "
-            "fetch bank details which are associated in questionaries"
-            "Supplier Data Pagination API for a given supplier/vendor ID."
-        ),
-        annotations={
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": True,
-        },
-    )
-    async def supplier_questionnaire_qna(vendor_id: str) -> str:
+            "Fetch only bank and tax related questionnaire Q&A data for a given SAP Ariba supplier/vendor ID. "
+            "Use this when full questionnaire Q&A is too large."
+    ),
+    annotations={
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    },
+)
+async def supplier_bank_tax_qna(vendor_id: str) -> str:
+    try:
+        url = (
+            f"{client.base_url}/{API_PATH}/vendors/"
+            f"{vendor_id}/workspaces/questionnaires/qna"
+        )
+
+        headers = await _sdp_auth.get_headers()
+        headers["Accept"] = "application/json"
+
+        async with httpx.AsyncClient() as http:
+            resp = await http.get(
+                url,
+                params={"realm": client.realm},
+                headers=headers,
+                timeout=60,
+            )
+            resp.raise_for_status()
+
         try:
-            url = (
-                f"{API_PATH}/vendors/{vendor_id}/workspaces/questionnaires/qna"
+            data = resp.json()
+        except Exception:
+            return json.dumps(
+                {
+                    "vendor_id": vendor_id,
+                    "error": "Response was not valid JSON",
+                    "raw_response_preview": resp.text[:5000],
+                },
+                default=str,
             )
 
-            headers = await _sdp_auth.get_headers()
-            headers["Accept"] = "application/json"
+        keywords = [
+            "bank",
+            "banking",
+            "account",
+            "account number",
+            "iban",
+            "swift",
+            "ifsc",
+            "routing",
+            "sort code",
+            "branch",
+            "beneficiary",
+            "tax",
+            "tax id",
+            "tax number",
+            "vat",
+            "gst",
+            "tin",
+            "pan",
+            "ein",
+            "withholding",
+        ]
 
-            async with httpx.AsyncClient() as http:
-                resp = await http.get(
-                    url,
-                    params={"realm": client.realm},
-                    headers=headers,
-                    timeout=60,
-                )
-                resp.raise_for_status()
+        def contains_keyword(value: object) -> bool:
+            text = json.dumps(value, default=str).lower()
+            return any(keyword in text for keyword in keywords)
 
-            try:
-                data = resp.json()
-            except Exception:
-                data = {"raw_response": resp.text}
+        def collect_matches(value: object, path: str = "") -> list[dict]:
+            matches = []
 
-            result = {
-                "vendor_id": vendor_id,
-                "questionnaire_qna": data,
-            }
+            if isinstance(value, dict):
+                if contains_keyword(value):
+                    matches.append(
+                        {
+                            "path": path,
+                            "data": value,
+                        }
+                    )
 
-            return json.dumps(result, default=str)
-        except Exception as e:
-            return handle_ariba_error(e)
+                for key, child in value.items():
+                    child_path = f"{path}.{key}" if path else str(key)
+                    matches.extend(collect_matches(child, child_path))
+
+            elif isinstance(value, list):
+                for index, child in enumerate(value):
+                    child_path = f"{path}[{index}]"
+                    matches.extend(collect_matches(child, child_path))
+
+            return matches
+
+        matches = collect_matches(data)
+
+        result = {
+            "vendor_id": vendor_id,
+            "filter": "bank_and_tax_related_qna",
+            "total_matches": len(matches),
+            "matches": matches[:100],
+            "note": "Returned maximum 100 matching sections to avoid context_length_exceeded error.",
+        }
+
+        return json.dumps(result, default=str)
+
+    except Exception as e:
+        return handle_ariba_error(e)
