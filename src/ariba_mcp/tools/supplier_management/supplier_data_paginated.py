@@ -10,7 +10,7 @@ from ariba_mcp.client import AribaClient
 from ariba_mcp.config import get_settings
 from ariba_mcp.errors import handle_ariba_error
 
-API_PATH = "supplierdatapagination/v4/prod"
+API_PATH = "https://openapi.ariba.com/api/supplierdatapagination/v4/prod"
 
 
 def _make_sdp_auth() -> DirectAuthClient:
@@ -47,7 +47,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     )
     async def list_all_suppliers(page: int | None = None, page_size: int = 50) -> str:
         try:
-            url = f"{client.base_url}/{API_PATH}/vendorDataRequests"
+            url = f"{API_PATH}/vendorDataRequests"
             headers = await _sdp_auth.get_headers()
             headers["Content-Type"] = "application/json"
 
@@ -101,7 +101,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     async def get_by_vendor_id(vendor_ids: str) -> str:
         try:
             ids = [v.strip() for v in vendor_ids.split(",")]
-            url = f"{client.base_url}/{API_PATH}/vendorDataRequests"
+            url = f"{API_PATH}/vendorDataRequests"
             headers = await _sdp_auth.get_headers()
             headers["Content-Type"] = "application/json"
 
@@ -129,6 +129,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
         name="ariba_supplier_questionnaire_qna",
         description=(
             "Fetch supplier workspace questionnaire Q&A data from SAP Ariba "
+            "fetch bank details which are associated in questionaries"
             "Supplier Data Pagination API for a given supplier/vendor ID."
         ),
         annotations={
@@ -141,8 +142,7 @@ def register(mcp: FastMCP, client: AribaClient) -> None:
     async def supplier_questionnaire_qna(vendor_id: str) -> str:
         try:
             url = (
-                f"{client.base_url}/{API_PATH}/vendors/"
-                f"{vendor_id}/workspaces/questionnaires/qna"
+                f"{API_PATH}/vendors/{vendor_id}/workspaces/questionnaires/qna"
             )
 
             headers = await _sdp_auth.get_headers()
